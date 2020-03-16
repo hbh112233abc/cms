@@ -1,0 +1,53 @@
+<?php
+
+declare(strict_types=1);
+
+namespace app\common\middleware;
+
+use think\facade\View;
+use think\facade\Env;
+use think\facade\Config;
+
+class Theme
+{
+    /**
+     * 处理请求
+     *
+     * @param \think\Request $request
+     * @param \Closure       $next
+     * @return Response
+     */
+    public function handle($request, \Closure $next)
+    {
+        //读取当前主题详细信息
+        $config = get_theme_config();
+
+        /*根据配置和来访设备类型自动切换为电脑主题或手机主题。 start */
+        $header = $request->header();
+        $isWechat = isset($header['user-agent']) && preg_match('/micromessenger/', strtolower($header['user-agent']));
+        if ($request->isMobile() || $isWechat) {
+            $template = "mobile";
+        } else {
+            $template = "pc";
+        }
+
+        //设置所有主题的存放路径
+        $themePath = root_path()  . 'public' . DIRECTORY_SEPARATOR . 'theme' . DIRECTORY_SEPARATOR . $config['theme_name'] . DIRECTORY_SEPARATOR;
+        $viewPath = $themePath . 'tpl' . DIRECTORY_SEPARATOR;
+        $paginateFile = $themePath . 'paginate.php';
+        if (isset($config['responsive']) && $config['responsive'] == true) {
+            $viewPath .=  $template . DIRECTORY_SEPARATOR;
+            $paginateFile = $themePath . 'paginate_' . $template . '.php';
+        }
+
+        //使用容器修改
+        View::config(['view_path' => $viewPath]);
+
+        //如果分页配置存在时，加载分页配置
+        if (file_exists($paginateFile)) {
+            Config::load($paginateFile, 'paginate');
+        }
+
+        return $next($request);
+    }
+}
