@@ -109,6 +109,15 @@ class ArticleModel extends BaseModel
         }
     }
 
+    //属性is_plushed
+    public function getIsPlushedAttr($value, $data)
+    {
+        if ($data['status'] == self::STATUS_PUBLISHED) {
+            return true;
+        }
+        return false;
+    }
+
     //属性：status_text
     public function getStatusTextAttr($value, $data)
     {
