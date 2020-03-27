@@ -2,9 +2,8 @@
 
 namespace app\common\controller;
 
-use think\facade\Env;
 use app\common\model\ImageModel;
-
+use think\facade\Filesystem;
 /**
  * 图片上传组件
  * 使用方法，图片控制器中，use \app\common\controller\Image,
@@ -15,18 +14,21 @@ trait Image
     public function upload()
     {
         $file = request()->file('Filedata');
-        if (empty($file)) $file = request()->file('file');
+        if (empty($file)) {
+            $file = request()->file('file');
+        }
+
         if (empty($file)) {
             //return $this->error('请选择上传文件');
             return $this->result(null, 0, '请选择上传文件', 'json');
         }
 
         //图片规定尺寸
-        $imgWidth = request()->param('width/d', 0);
+        $imgWidth  = request()->param('width/d', 0);
         $imgHeight = request()->param('height/d', 0);
 
         //缩略图尺寸
-        $tbWidth = request()->param('thumbWidth/d', 0);
+        $tbWidth  = request()->param('thumbWidth/d', 0);
         $tbHeight = request()->param('thumbHeight/d', 0);
 
         $path = root_path() . 'public' . DIRECTORY_SEPARATOR . 'upload';
@@ -35,8 +37,8 @@ trait Image
             ['file' => $file],
             ['file' => 'require|image|fileSize:4097152'],
             [
-                'file.require' => '请上传图片',
-                'file.image' => '不是图片文件',
+                'file.require'  => '请上传图片',
+                'file.image'    => '不是图片文件',
                 'file.fileSize' => '图片太大了',
             ]
         );
@@ -51,19 +53,14 @@ trait Image
             }
         }
 
-        $info = $file->move($path);
+        $saveName = Filesystem::putFile('images', $file);
+        halt($saveName);
 
-        if (!$info) {
-            // 上传失败获取错误信息
-            return $this->error($file->getError());
-        }
-
-        $saveName = $info->getSaveName();
-        $imgUrl = $path . DIRECTORY_SEPARATOR . $saveName;
+        $imgUrl = $saveName;
 
         //图片缩放处理
-        $image = \think\Image::open($info);
-        $quality = get_config('image_upload_quality', 80); //获取图片清晰度设置，默认是80
+        $image     = \think\Image::open($info);
+        $quality   = get_config('image_upload_quality', 80); //获取图片清晰度设置，默认是80
         $extension = image_type_to_extension($type, false); //png格式时，quality不影响值；jpg|jpeg有效果
         if ($imgWidth > 0 && $imgHeight > 0) {
             //缩放至指定的宽高
@@ -84,16 +81,16 @@ trait Image
 
             $data = [
                 'thumb_image_url' => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . 'tb_' . $info->getFilename(),
-                'image_url' => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . $info->getFilename(),
-                'create_time' => date_time(),
-                'remark' => input('post.remark'),
+                'image_url'       => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . $info->getFilename(),
+                'create_time'     => date_time(),
+                'remark'          => input('post.remark'),
             ];
         } else {
             $data = [
                 'thumb_image_url' => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . $info->getFilename(),
-                'image_url' => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . $info->getFilename(),
-                'create_time' => date_time(),
-                'remark' => input('post.remark'),
+                'image_url'       => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . $info->getFilename(),
+                'create_time'     => date_time(),
+                'remark'          => input('post.remark'),
             ];
         }
 
@@ -102,14 +99,14 @@ trait Image
                 return $this->error('您启用了OSS存储，却未安装 think-oss 组件，运行 > composer youyiio/think-oss 进行安装！');
             }
 
-            $vendor = get_config('oss_vendor');
-            $m = new \think\oss\OSSContext($vendor);
-            $ossImgUrl = $m->doUpload($info->getSaveName(), 'cms');
+            $vendor                = get_config('oss_vendor');
+            $m                     = new \think\oss\OSSContext($vendor);
+            $ossImgUrl             = $m->doUpload($info->getSaveName(), 'cms');
             $data['oss_image_url'] = $ossImgUrl;
         }
 
         $ImageModel = new ImageModel();
-        $imageId = $ImageModel->insertGetId($data);
+        $imageId    = $ImageModel->insertGetId($data);
 
         $data['image_id'] = $imageId;
 

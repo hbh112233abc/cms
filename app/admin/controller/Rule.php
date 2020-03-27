@@ -135,7 +135,7 @@ class Rule extends Base
      */
     public function group()
     {
-        $data = AuthGroupModel::all();
+        $data = AuthGroupModel::select();
         View::assign('data', $data);
         return view('group');
     }

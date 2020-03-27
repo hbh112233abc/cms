@@ -3,7 +3,8 @@
 namespace app\admin\controller;
 
 use app\common\model\ImageModel;
-use think\facade\Env;
+use think\facade\Config;
+use think\facade\Filesystem;
 use think\facade\View;
 
 /**
@@ -19,7 +20,9 @@ class Image extends Base
      * */
     public function upcrop()
     {
-        $imageId = request()->param('imageId/d', 0);
+        $fsConfig = Config::get('filesystem');
+        $fsDriver = $fsConfig['disks'][$fsConfig['default']];
+        $imageId  = request()->param('imageId/d', 0);
         //id不存在时，图片上传
         if (empty($imageId)) {
             $tmpFile = request()->file('file');
@@ -35,8 +38,6 @@ class Image extends Base
             $tbWidth  = request()->param('thumbWidth/d', 0);
             $tbHeight = request()->param('thumbHeight/d', 0);
 
-            $path = Env::get('root_path') . 'public' . DIRECTORY_SEPARATOR . 'upload';
-
             $check = $this->validate(
                 ['file' => $tmpFile],
                 ['file' => 'require|image|fileSize:4097152'],
@@ -50,17 +51,19 @@ class Image extends Base
                 return $this->error($check);
             }
 
-            $file = $tmpFile->move($path);
-            if (!$file) {
+            $saveName = Filesystem::putFile('images', $tmpFile);
+            if (!$saveName) {
                 // 上传失败获取错误信息
-                return $this->error($file->getError());
+                return $this->error('上传失败');
             }
-            list($width, $height, $type) = getimagesize($file->getRealPath()); //获得图片宽高类型
+            $filePath = $fsDriver['root'] . DIRECTORY_SEPARATOR . $saveName;
+            // halt($filePath);
 
-            $saveName = $file->getSaveName();
-            $data     = [
-                'thumb_image_url' => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . $file->getFilename(),
-                'image_url'       => DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . dirname($saveName) . DIRECTORY_SEPARATOR . $file->getFilename(),
+            list($width, $height, $type) = getimagesize($filePath); //获得图片宽高类型
+
+            $data = [
+                'thumb_image_url' => $fsDriver['url'] . DIRECTORY_SEPARATOR . $saveName,
+                'image_url'       => $fsDriver['url'] . DIRECTORY_SEPARATOR . $saveName,
                 'create_time'     => date_time(),
                 'remark'          => input('post.remark'),
             ];
@@ -103,8 +106,8 @@ class Image extends Base
         $width  = request()->param('width/d', 0); //源图截取的宽
         $height = request()->param('height/d', 0); //源图截取的高
 
-        $path     = Env::get('root_path') . 'public' . DIRECTORY_SEPARATOR;
-        $realPath = $path . $imageModel->image_url;
+        $realPath = public_path('public') . $imageModel->image_url;
+        // halt($realPath);
         $file     = new \SplFileInfo($realPath);
         $srcImage = \think\Image::open($file);
         if (!$srcImage) {
@@ -128,8 +131,11 @@ class Image extends Base
         $tbImgUrl = $file->getPath() . DIRECTORY_SEPARATOR . 'crop_' . $file->getFilename();
         $srcImage->save($tbImgUrl, $extension, $quality, true);
 
-        $imageModel->image_url       = DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . date('Ymd') . DIRECTORY_SEPARATOR . 'crop_' . $file->getFilename();
-        $imageModel->thumb_image_url = DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . date('Ymd') . DIRECTORY_SEPARATOR . 'tb_crop_' . $file->getFilename();
+        $urlPath = str_replace(public_path('public'), '', $file->getPath());
+        // halt($urlPath);
+
+        $imageModel->image_url       = $urlPath . DIRECTORY_SEPARATOR . 'crop_' . $file->getFilename();
+        $imageModel->thumb_image_url = $urlPath . DIRECTORY_SEPARATOR . 'tb_crop_' . $file->getFilename();
         $imageModel->save();
 
         $data = $imageModel;
