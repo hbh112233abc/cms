@@ -193,12 +193,12 @@ class BaiduUeditor extends Base
         $dirname = $this->rootPath . $this->savePath;
         $file    = request()->file('upfile');
 
-        $saveName = \think\facade\Filesystem::putFile($this->uid, $file); //tp方法会自动加上日期date('Ymd');$info->getSaveName()为date('Ymd')/name.ext;
+        $saveName = \think\facade\Filesystem::putFile($this->uid, $file);
         $savePath = $this->savePath;
-        if ($info) {
-            $fname    = $dirname . DIRECTORY_SEPARATOR . $info->getSaveName();
+        if ($saveName) {
+            $fname    = $dirname . DIRECTORY_SEPARATOR . $saveName;
             $imagearr = explode(',', 'jpg,gif,png,jpeg,bmp,ttf,tif');
-            $ext      = $info->getExtension();
+            $ext      = $file->getExtension();
             $quality  = get_config('image_upload_quality', 80); //获取图片清晰度设置，默认是80
 
             $isImage = in_array($ext, $imagearr) ? 1 : 0;
@@ -221,11 +221,11 @@ class BaiduUeditor extends Base
 
             $data = array(
                 'state'    => 'SUCCESS',
-                'url'      => config('view_replace_str.__PUBLIC__') . str_replace(DIRECTORY_SEPARATOR, '/', $savePath . $info->getSaveName()),
-                'title'    => $info->getFileName(),
-                'original' => $info->getInfo('name'),
+                'url'      => config('view_replace_str.__PUBLIC__') . str_replace(DIRECTORY_SEPARATOR, '/', $savePath . $saveName),
+                'title'    => $file->getFileName(),
+                'original' => $file->getFileName(),
                 'type'     => '.' . $ext,
-                'size'     => $info->getSize(),
+                'size'     => $file->getSize(),
             );
         } else {
             $data = array(
