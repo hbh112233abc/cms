@@ -1,33 +1,31 @@
 <?php
 namespace app\common\model;
 
-use think\Db;
-use think\facade\Cookie;
-use youyi\util\PregUtil;
-use youyi\util\StringUtil;
 use app\common\exception\ModelException;
 use app\common\library\ResultCode;
-
+use think\facade\Cookie;
 use think\Model;
+use youyi\util\PregUtil;
+use youyi\util\StringUtil;
 
 class UserModel extends BaseModel
 {
     protected $name = CMS_PREFIX . 'user';
-    protected $pk = 'user_id';
+    protected $pk   = 'user_id';
 
     const STATUS_DELETED = -1; //已删除
-    const STATUS_APPLY   = 1;  //申请
-    const STATUS_ACTIVED = 2;  //已激活
-    const STATUS_FREEZED = 3;  //已冻结
+    const STATUS_APPLY   = 1; //申请
+    const STATUS_ACTIVED = 2; //已激活
+    const STATUS_FREEZED = 3; //已冻结
 
     //属性：status_text
     public function getStatusTextAttr($value, $data)
     {
         $status = [
             -1 => '已删除',
-            1 => '申请',
-            2 => '已激活',
-            3 => '已冻结',
+            1  => '申请',
+            2  => '已激活',
+            3  => '已冻结',
         ];
 
         return isset($status[$data['status']]) ? $status[$data['status']] : '未知状态';
@@ -38,9 +36,9 @@ class UserModel extends BaseModel
     {
         $status = [
             -1 => '<span class="label label-danger">已删除</span>',
-            1 => '<span class="label label-default">申请</span>',
-            2 => '<span class="label label-success">已激活</span>',
-            3 => '<span class="label label-warning">已冻结</span>',
+            1  => '<span class="label label-default">申请</span>',
+            2  => '<span class="label label-success">已激活</span>',
+            3  => '<span class="label label-warning">已冻结</span>',
         ];
 
         return isset($status[$data['status']]) ? $status[$data['status']] : '未知状态';
@@ -50,17 +48,17 @@ class UserModel extends BaseModel
     //关联表：用户组
     public function groups()
     {
-        return $this->belongsToMany('AuthGroupModel', config('database.prefix'). CMS_PREFIX . 'auth_group_access','group_id','uid');
+        return $this->belongsToMany('AuthGroupModel', config('database.prefix') . CMS_PREFIX . 'auth_group_access', 'group_id', 'uid');
     }
 
     //关联表：用户组中间表
     public function groupAccess()
     {
-        return $this->hasMany('AuthGroupAccessModel','uid','user_id');
+        return $this->hasMany('AuthGroupAccessModel', 'uid', 'user_id');
     }
 
     //自身扩展字段
-    public function ext($key, $value='')
+    public function ext($key, $value = '')
     {
         $ext = $this->ext;
         if (empty($ext)) {
@@ -70,7 +68,7 @@ class UserModel extends BaseModel
         }
 
         if ($value === '') {
-            return isset($exts[$key]) ? $exts[$key] : null ;
+            return isset($exts[$key]) ? $exts[$key] : null;
         } else if ($value === null) {
             unset($exts[$key]);
         } else {
@@ -89,7 +87,7 @@ class UserModel extends BaseModel
             throw new ModelException(ResultCode::E_USER_MOBILE_HAS_EXIST, '手机号已经存在');
         }
         if (empty($email)) {
-            $email = $mobile .'@' . StringUtil::getRandString(6) . '.com';
+            $email = $mobile . '@' . StringUtil::getRandString(6) . '.com';
         } else if ($this->findByEmail($email)) {
             throw new ModelException(ResultCode::E_USER_EMAIL_HAS_EXIST, '邮箱已经存在');
         }
@@ -99,14 +97,14 @@ class UserModel extends BaseModel
             throw new ModelException(ResultCode::E_USER_ACCOUNT_HAS_EXIST, '帐号已经存在');
         }
 
-        $user = new UserModel();
-        $user->mobile = $mobile;
-        $user->email = $email;
-        $user->account = $account;
-        $user->password = encrypt_password($password, get_config('password_key'));
-        $user->status = $status;
-        $user->nickname = $nickname;
-        $currentTime = date('Y-m-d H:i:s');
+        $user                = new UserModel();
+        $user->mobile        = $mobile;
+        $user->email         = $email;
+        $user->account       = $account;
+        $user->password      = encrypt_password($password, get_config('password_key'));
+        $user->status        = $status;
+        $user->nickname      = $nickname;
+        $currentTime         = date('Y-m-d H:i:s');
         $user->register_time = $currentTime;
 
         //设置来源及入口url
@@ -157,44 +155,45 @@ class UserModel extends BaseModel
     {
         //$data['user_id'] = $userId;
         $data['last_login_time'] = date('Y-m-d H:i:s');
-        $data['last_login_ip'] = $ip;
+        $data['last_login_ip']   = $ip;
 
         return $this->where('user_id', $userId)->update($data);
     }
 
-    public function setProfile($userId, $nickname, $sex='', $headUrl='', $qq='', $weixin='')
+    public function setProfile($userId, $nickname, $sex = '', $headUrl = '', $qq = '', $weixin = '')
     {
-        $data['user_id'] = $userId;
-        $data['nickname'] = $nickname;
+        $user = self::where('user_id', $userId)->find();
+
+        $user['nickname'] = $nickname;
         if ($sex) {
-            $data['sex'] = $sex;
+            $user['sex'] = $sex;
         }
         if ($headUrl) {
-            $data['head_url'] = $headUrl;
+            $user['head_url'] = $headUrl;
         }
         if ($qq) {
-            $data['qq'] = $qq;
+            $user['qq'] = $qq;
         }
         if ($weixin) {
-            $data['weixin'] = $weixin;
+            $user['weixin'] = $weixin;
         }
 
-        $result = $this->isUpdate(true)->save($data);
+        $result = $user->save();
         if ($result == false) {
             return false;
         }
 
-        return $this->find($userId);
+        return $user;
     }
 
-    public function modifyPassword($userId, $password) {
-        $newPassword = encrypt_password($password, get_config('password_key'));
+    public function modifyPassword($userId, $password)
+    {
+        $user             = self::where('user_id', $userId)->find();
+        $newPassword      = encrypt_password($password, get_config('password_key'));
+        $user['password'] = $newPassword;
+        $user->allowField('password')->save();
 
-        $data['user_id'] = $userId;
-        $data['password'] = $newPassword;
-        $this->isUpdate(true)->save($data);
-
-        return $this->find($userId);
+        return $user;
     }
 
     public function findByMobile($mobile)
@@ -228,13 +227,13 @@ class UserModel extends BaseModel
 
         //验证
         $validate = validate('User');
-        $check = $validate->scene('edit')->check($data);
+        $check    = $validate->scene('edit')->check($data);
         if ($check !== true) {
             $this->error = $validate->getError();
             return false;
         }
 
-        $res = $this->allowField(true)->isUpdate(true)->save($data);
+        $res = self::allowField(true)->update($data);
         if ($res === false) {
             $this->error = '修改失败';
             return false;

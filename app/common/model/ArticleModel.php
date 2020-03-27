@@ -2,25 +2,25 @@
 
 namespace app\common\model;
 
-use think\facade\Log;
-use think\facade\Cache;
 use app\common\exception\ModelException;
+use think\facade\Cache;
+use think\facade\Log;
 
 class ArticleModel extends BaseModel
 {
     protected $name = CMS_PREFIX . 'article';
 
-    const STATUS_DELETED = -1; //删除
-    const STATUS_DRAFT = 0; //草稿
-    const STATUS_PUBLISHING = 1; //申请发布
-    const STATUS_FIRST_AUDIT_REJECT = 2; //初审拒绝
-    const STATUS_FIRST_AUDITED = 3; //初审通过
+    const STATUS_DELETED             = -1; //删除
+    const STATUS_DRAFT               = 0; //草稿
+    const STATUS_PUBLISHING          = 1; //申请发布
+    const STATUS_FIRST_AUDIT_REJECT  = 2; //初审拒绝
+    const STATUS_FIRST_AUDITED       = 3; //初审通过
     const STATUS_SECOND_AUDIT_REJECT = 4; //终审拒绝
-    const STATUS_PUBLISHED = 5; //已发布
+    const STATUS_PUBLISHED           = 5; //已发布
 
     protected $pk = 'id';
 
-    protected $auto = ['update_time'];
+    protected $auto   = ['update_time'];
     protected $insert = ['status', 'create_time', 'user_id'];
     protected $update = ['update_time'];
 
@@ -30,7 +30,7 @@ class ArticleModel extends BaseModel
         $id = $article->id;
 
         //指定任务的处理类，若指定至方法时，@methodName
-        $jobHandlerClass  = 'app\admin\job\Article@afterInsert';
+        $jobHandlerClass = 'app\admin\job\Article@afterInsert';
         //任务的业务数据 . 不能为 resource 类型，其他类型最终将转化为json形式的字符串; jobData 为对象时，存储其public属性的键值对
         $jobData = ['id' => $id];
         //任务归属的队列名称，如果为新队列，会自动创建
@@ -51,26 +51,26 @@ class ArticleModel extends BaseModel
         //提交链接
         if ($article['status'] == ArticleModel::STATUS_PUBLISHED) {
             $jobHandlerClass = 'app\admin\job\Webmaster@pushLinks';
-            $jobData = ['id' => $id, 'url' => $articleUrl];
-            $jobQueue = config('queue.default');
+            $jobData         = ['id' => $id, 'url' => $articleUrl];
+            $jobQueue        = config('queue.default');
             \think\Queue::push($jobHandlerClass, $jobData, $jobQueue);
         }
 
         //检测收录,延迟4,6,24小时
-        $jobHandlerClass  = 'app\admin\job\Webmaster@checkIndex';
-        $jobData = ['id' => $id, 'url' => $articleUrl];
-        $jobQueue = config('queue.default');
+        $jobHandlerClass = 'app\admin\job\Webmaster@checkIndex';
+        $jobData         = ['id' => $id, 'url' => $articleUrl];
+        $jobQueue        = config('queue.default');
         \think\Queue::later(2 * 60 * 60, $jobHandlerClass, $jobData, $jobQueue);
         \think\Queue::later(4 * 60 * 60, $jobHandlerClass, $jobData, $jobQueue);
     }
 
-    static public function onAfterUpdate($article)
+    public static function onAfterUpdate($article)
     {
 
         $id = $article->id;
 
         //指定任务的处理类，若指定至方法时，@methodName
-        $jobHandlerClass  = 'app\admin\job\Article@afterUpdate';
+        $jobHandlerClass = 'app\admin\job\Article@afterUpdate';
         //任务的业务数据 . 不能为 resource 类型，其他类型最终将转化为json形式的字符串; jobData 为对象时，存储其public属性的键值对
         $jobData = ['id' => $id];
         //任务归属的队列名称，如果为新队列，会自动创建
@@ -92,16 +92,16 @@ class ArticleModel extends BaseModel
             $article = ArticleModel::where(['id' => $id])->field('id,status')->find();
         }
         if ($article->status == ArticleModel::STATUS_PUBLISHED) {
-            $jobHandlerClass  = 'app\admin\job\Webmaster@pushLinks';
-            $articleUrl = get_config('domain_name') . url('index/Article/viewArticle', ['aid' => $id], true, false);
-            $jobData = ['id' => $id, 'url' => $articleUrl];
-            $jobQueue = config('queue.default');
+            $jobHandlerClass = 'app\admin\job\Webmaster@pushLinks';
+            $articleUrl      = get_config('domain_name') . url('index/Article/viewArticle', ['aid' => $id], true, false);
+            $jobData         = ['id' => $id, 'url' => $articleUrl];
+            $jobQueue        = config('queue.default');
             \think\Queue::push($jobHandlerClass, $jobData, $jobQueue);
 
             //检测收录,延迟4,6,24小时
-            $jobHandlerClass  = 'app\admin\job\Webmaster@checkIndex';
-            $jobData = ['id' => $id, 'url' => $articleUrl];
-            $jobQueue = config('queue.default');
+            $jobHandlerClass = 'app\admin\job\Webmaster@checkIndex';
+            $jobData         = ['id' => $id, 'url' => $articleUrl];
+            $jobQueue        = config('queue.default');
             \think\Queue::later(2 * 60 * 60, $jobHandlerClass, $jobData, $jobQueue);
             \think\Queue::later(4 * 60 * 60, $jobHandlerClass, $jobData, $jobQueue);
         } else {
@@ -109,18 +109,17 @@ class ArticleModel extends BaseModel
         }
     }
 
-
     //属性：status_text
     public function getStatusTextAttr($value, $data)
     {
         $status = [
             -1 => '删除',
-            0 => '草稿',
-            1 => '申请发布',
-            2 => '初审拒绝',
-            3 => '初审通过',
-            4 => '终审拒绝',
-            5 => '已发布',
+            0  => '草稿',
+            1  => '申请发布',
+            2  => '初审拒绝',
+            3  => '初审通过',
+            4  => '终审拒绝',
+            5  => '已发布',
         ];
         return isset($status[$data['status']]) ? $status[$data['status']] : '未知';
     }
@@ -128,9 +127,9 @@ class ArticleModel extends BaseModel
     //属性: timing 定时
     public function getTimingAttr($value, $data)
     {
-        $id = $data['id'];
+        $id               = $data['id'];
         $ArticleMetaModel = new ArticleMetaModel();
-        $articleMeta = $ArticleMetaModel->getMeta($id, ArticleMetaModel::KEY_TIMING_POST);
+        $articleMeta      = $ArticleMetaModel->getMeta($id, ArticleMetaModel::KEY_TIMING_POST);
         return $articleMeta ? $articleMeta['meta_value'] : '0';
     }
 
@@ -169,7 +168,7 @@ class ArticleModel extends BaseModel
         $data = $data ?: input('post.');
 
         $validator = new \app\common\validate\Article();
-        $check = $validator->scene('add')->check($data);
+        $check     = $validator->scene('add')->check($data);
         if ($check !== true) {
             throw new ModelException(0, $validator->getError());
         }
@@ -178,7 +177,7 @@ class ArticleModel extends BaseModel
             $data['post_time'] = date_time();
         }
 
-        $res = $this->allowField(true)->isUpdate(false)->save($data);
+        $res = $this->allowField(true)->save($data);
 
         if (!$res) {
             return false;
@@ -204,8 +203,8 @@ class ArticleModel extends BaseModel
     public function edit($data = [])
     {
         $data = $data ?: input('post.');
-        $art = self::get(['id' => $data['id']]);
-        if (empty($art)) {
+        $art  = self::where('id', $data['id'])->findOrEmpty();
+        if ($art->isEmpty()) {
             throw new ModelException(0, '文章不存在');
         }
 
@@ -220,13 +219,13 @@ class ArticleModel extends BaseModel
         }
 
         $validate = validate('Article');
-        $check = $validate->scene('edit')->check($data);
+        $check    = $validate->scene('edit')->check($data);
         if ($check !== true) {
             throw new ModelException(0, $validate->getError());
             return false;
         }
 
-        $res = $this->allowField(true)->isUpdate(true)->save($data);
+        $res = $art->allowField(true)->save($data);
 
         // 删除中间表数据
         if (!empty($data['category_ids'])) {

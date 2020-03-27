@@ -56,7 +56,7 @@ trait AddonAdmin
         if (config('cms.auth_on') == 'on') {
             $node = request()->module() . '/' . request()->controller() . '/' . request()->action();
 
-            $auth = \think\auth\Auth::instance();
+            $auth = new \liliuwei\think\Auth;
             if (!$auth->check($node, $uid)) {
                 return $this->error('没有访问权限', 'javascript:void(0);');
             }

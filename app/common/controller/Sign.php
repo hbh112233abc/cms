@@ -2,21 +2,17 @@
 
 namespace app\common\controller;
 
+use app\common\logic\ActionLogLogic;
 use app\common\logic\CodeLogic;
+use app\common\logic\UserLogic;
+use app\common\model\ActionLogModel;
+use app\common\model\UserModel;
 use app\common\model\UserVerifyCodeModel;
+use think\captcha\facade\Captcha;
 use think\facade\Cache;
 use think\facade\Session;
 use think\facade\View;
-use think\captcha\facade\Captcha;
-
-use app\common\model\ActionLogModel;
-use app\common\model\UserModel;
-
-use app\common\logic\UserLogic;
-use app\common\logic\ActionLogLogic;
 use youyi\util\StringUtil;
-
-
 
 /**
  * 登录/注册/帐号处理控制器
@@ -25,12 +21,12 @@ class Sign extends \app\BaseController
 {
     protected $defaultConfig = [
         'login_multi_client_support' => false, //支持单个用户多个端同时登录
-        'login_success_view' => '', //登录成功后，跳转地址
-        'logout_success_view' => '', //注销后，跳转地址
-        'register_enable' => false, //注册功能是否支持
-        'register_code_type' => 'mail', //注册码方式，值为：mail,mobile
-        'reset_enable' => false, //忘记密码功能是否支持
-        'reset_code_type' => 'mail', //重置密码，值为：mail,mobile
+        'login_success_view'         => '', //登录成功后，跳转地址
+        'logout_success_view'        => '', //注销后，跳转地址
+        'register_enable'            => false, //注册功能是否支持
+        'register_code_type'         => 'mail', //注册码方式，值为：mail,mobile
+        'reset_enable'               => false, //忘记密码功能是否支持
+        'reset_code_type'            => 'mail', //重置密码，值为：mail,mobile
     ];
 
     /**
@@ -62,12 +58,11 @@ class Sign extends \app\BaseController
         if (true !== $result) {
             return $this->error($result);
         }
-
         $username = input('param.username');
         $password = input("param.password");
 
         //登录次数判断
-        $logErrorMark = input('username') . '_login_error';
+        $logErrorMark  = input('username') . '_login_error';
         $logErrorCount = Cache::get($logErrorMark);
         if ($logErrorCount > 5) {
             return $this->error('登录错误超过5次,账号被临时冻结1天');
@@ -76,9 +71,12 @@ class Sign extends \app\BaseController
             Cache::set($logErrorMark, $logErrorCount + 1, strtotime(date('Y-m-d 23:59:59')) - time());
             return $this->error('登录错误超过5次,账号被临时冻结1天');
         }
-
         $userLogic = new UserLogic();
-        $user = $userLogic->login($username, $password, request()->ip(0, true));
+        try {
+            $user = $userLogic->login($username, $password, request()->ip(0, true));
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage());
+        }
         if (!$user) {
             Cache::remember($logErrorMark, function () {
                 return 0;
@@ -87,7 +85,6 @@ class Sign extends \app\BaseController
 
             return $this->error($userLogic->getError());
         }
-
         $uid = $user['user_id'];
         //登录日志
         $actionLog = new ActionLogLogic();
@@ -96,7 +93,6 @@ class Sign extends \app\BaseController
         $expire = config('session.expire'); //缓存期限
         session('uid', $uid);
         cookie('uid', $uid, $expire);
-
         //用于实现用户单个端登录；
         if ($this->defaultConfig['login_multi_client_support'] !== true) {
             //生成login_hash
@@ -104,8 +100,7 @@ class Sign extends \app\BaseController
             cookie($uid . '_login_hash', $loginHash);
             cache($uid . '_login_hash', $loginHash);
         }
-
-        cookie('username', $username, 3600 * 24 * 15);  //保存用户名在cookie
+        cookie('username', $username, 3600 * 24 * 15); //保存用户名在cookie
 
         $loginSuccessView = $this->defaultConfig['login_success_view'];
         if (input('redirect')) {
@@ -137,23 +132,23 @@ class Sign extends \app\BaseController
             if (empty($invite)) {
                 $data['referee'] = 1; //推荐人
             } else {
-                $UserModel = new UserModel();
+                $UserModel       = new UserModel();
                 $data['referee'] = $UserModel->where('account', $invite)->value('user_id');
             }
 
             $userLogic = new UserLogic();
-            $mobile = StringUtil::getRandNum(11);
-            $user  = $userLogic->register($mobile, $data['password'], $data['nickname'], $data['email'], '', UserModel::STATUS_APPLY);
+            $mobile    = StringUtil::getRandNum(11);
+            $user      = $userLogic->register($mobile, $data['password'], $data['nickname'], $data['email'], '', UserModel::STATUS_APPLY);
             if ($user) {
                 $UserModel = new UserModel();
                 //完善用户资料
                 $profileData = [
-                    'user_id' => $user['user_id'],
-                    'head_url' => '/static/cms/image/head/0002.jpg',
-                    'referee' => $data['referee'], //推荐人
-                    'register_ip' => request()->ip(0, true),
+                    'user_id'      => $user['user_id'],
+                    'head_url'     => '/static/cms/image/head/0002.jpg',
+                    'referee'      => $data['referee'], //推荐人
+                    'register_ip'  => request()->ip(0, true),
                     'from_referee' => cookie('from_referee'),
-                    'entrance_url'     => cookie('entrance_url'),
+                    'entrance_url' => cookie('entrance_url'),
                 ];
                 $UserModel->where('user_id', $user['user_id'])->setField($profileData);
 
@@ -166,7 +161,7 @@ class Sign extends \app\BaseController
 
                 //发送激活邮件
                 $CodeLogic = new CodeLogic();
-                $res = $CodeLogic->sendActiveMail($user['email'], request()->module() . '/Sign/mailActive');
+                $res       = $CodeLogic->sendActiveMail($user['email'], request()->module() . '/Sign/mailActive');
                 if ($res) {
                     $param = ['uid' => $user['user_id'], 'email' => $user['email']];
                     return $this->success('注册成功, 请登录邮箱激活您的帐号!', url(request()->module() . '/Sign/login'), $param);
@@ -237,11 +232,11 @@ class Sign extends \app\BaseController
         }
 
         $username = input('username', '');
-        $code = input('code', '');
+        $code     = input('code', '');
 
         //验证账号是否存在
         $UserModel = new UserModel();
-        $user = null;
+        $user      = null;
         if ($this->defaultConfig['reset_code_type'] === 'mail') {
             $user = $UserModel->findByEmail($username);
         } else if ($this->defaultConfig['reset_code_type'] === 'mobile') {
@@ -261,7 +256,7 @@ class Sign extends \app\BaseController
             }
 
             $password = input('post.password');
-            $uid = $user['user_id'];
+            $uid      = $user['user_id'];
 
             $CodeLogic = new CodeLogic();
             if (!$CodeLogic->checkVerifyCode(UserVerifyCodeModel::TYPE_RESET_PASSWORD, $username, $code)) {
@@ -269,7 +264,7 @@ class Sign extends \app\BaseController
             }
 
             $UserModel = new UserModel();
-            $res = $UserModel->modifyPassword($uid, $password);
+            $res       = $UserModel->modifyPassword($uid, $password);
             if ($res) {
                 //消费验证码
                 $CodeLogic->consumeCode(UserVerifyCodeModel::TYPE_RESET_PASSWORD, $username, $code);
@@ -289,20 +284,20 @@ class Sign extends \app\BaseController
     //邮件激活
     public function mailActive()
     {
-        $code = input('param.code/s');
+        $code  = input('param.code/s');
         $email = input('param.email/s');
         if (empty($code) || empty($email)) {
             return $this->error('错误：参数错误！', url('index/Index/index'));
         }
 
         $CodeLogic = new CodeLogic();
-        $check = $CodeLogic->checkVerifyCode(UserVerifyCodeModel::TYPE_MAIL_ACTIVE, $email, $code);
+        $check     = $CodeLogic->checkVerifyCode(UserVerifyCodeModel::TYPE_MAIL_ACTIVE, $email, $code);
         if (!$check) {
             return $this->error($CodeLogic->getError());
         }
 
         $UserModel = new UserModel();
-        $user = $UserModel->findByEmail($email);
+        $user      = $UserModel->findByEmail($email);
         if (!$user) {
             return $this->error('邮箱不存在', url(request()->module() . '/Sign/register'));
         }
@@ -333,7 +328,7 @@ class Sign extends \app\BaseController
     //登出处理
     public function logout()
     {
-        $uid = session('uid');
+        $uid       = session('uid');
         $actionLog = new ActionLogLogic();
         $actionLog->addLog($uid, ActionLogModel::ACTION_LOGOUT, '登出 ');
 

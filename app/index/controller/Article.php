@@ -2,11 +2,11 @@
 
 namespace app\index\controller;
 
+use app\common\library\Time;
 use app\common\model\ArticleMetaModel;
 use app\common\model\ArticleModel;
 use app\common\model\CategoryModel;
 use app\common\model\CommentModel;
-use think\helper\Time;
 use think\facade\View;
 
 /**
@@ -45,7 +45,7 @@ class Article extends Base
 
         if (empty($cid) && !empty($cname)) {
             $CategoryModel = new CategoryModel();
-            $category = $CategoryModel->where(['title_en' => $cname])->find();
+            $category      = $CategoryModel->where(['title_en' => $cname])->find();
             if (empty($category)) {
                 $this->error('分类名不存在');
             }
@@ -56,7 +56,7 @@ class Article extends Base
         View::assign('cname', $cname);
 
         $CategoryModel = new CategoryModel();
-        $category = $CategoryModel->where(['id' => $cid])->find();
+        $category      = $CategoryModel->where(['id' => $cid])->find();
         if (empty($category)) {
             $this->error('分类不存在');
         }
@@ -81,7 +81,7 @@ class Article extends Base
         }
 
         $CategoryModel = new CategoryModel();
-        $child = $CategoryModel->where(['title_en' => $csubname])->find();
+        $child         = $CategoryModel->where(['title_en' => $csubname])->find();
         if (empty($child)) {
             $this->error('子分类名不存在');
         }
@@ -95,7 +95,6 @@ class Article extends Base
         View::assign('cid', $cid);
         View::assign('cname', $cname);
         View::assign('csubname', $csubname);
-
 
         View::assign('category', $category);
         View::assign('subcategory', $child);
@@ -121,48 +120,47 @@ class Article extends Base
         }
 
         $ArticleModel = new ArticleModel();
-        $article = $ArticleModel->find($aid);
+        $article      = $ArticleModel->find($aid);
         if (empty($article) || $article['status'] != ArticleModel::STATUS_PUBLISHED) {
             $this->error('文章不存在');
         }
         View::assign('aid', $aid);
 
         //阅读量+1(一个ip一天只能添加1的浏览量),但阅读记录保持入库
-        $id = $article['id'];
-        $ip = \think\facade\Request::ip(0, true);
+        $id    = $article['id'];
+        $ip    = \think\facade\Request::ip(0, true);
         $today = Time::today();
         $where = [
             ['article_id', '=', $id],
             ['meta_key', '=', 'read_ip'],
             ['meta_value', '=', $ip],
             ['create_time', '>=', date_time($today[0])],
-            ['create_time', '<', date_time($today[1])]
+            ['create_time', '<', date_time($today[1])],
         ];
 
         $ArticleMetaModel = new ArticleMetaModel();
-        $meta = $ArticleMetaModel->where($where)->find();
+        $meta             = $ArticleMetaModel->where($where)->find();
         if (!$meta) {
             $ArticleModel->where('id', $aid)->setInc('read_count');
         }
 
         $data = [
-            'article_id' => $id,
-            'meta_key' => 'read_ip',
-            'meta_value' => $ip,
+            'article_id'  => $id,
+            'meta_key'    => 'read_ip',
+            'meta_value'  => $ip,
             'update_time' => date_time(),
-            'create_time' => date_time()
+            'create_time' => date_time(),
         ];
         $ArticleMetaModel->insert($data);
 
-
         if (empty($cid)) {
             $categorys = $article->categorys;
-            $cid = $categorys[0]->id;
+            $cid       = $categorys[0]->id;
         }
         View::assign('cid', $cid);
 
         $CategoryModel = new CategoryModel();
-        $category = $CategoryModel->where(['id' => $cid])->find();
+        $category      = $CategoryModel->where(['id' => $cid])->find();
         if (empty($category)) {
             $this->error('分类不存在');
         }
@@ -170,8 +168,8 @@ class Article extends Base
 
         //评论
         $CommentModel = new CommentModel();
-        $list = $CommentModel->where(['article_id' => $aid, 'status' => CommentModel::STATUS_PUBLISHED])->order('create_time desc')->paginate(6, false, ['query' => input('param.')]);
-        $page = $list->render();
+        $list         = $CommentModel->where(['article_id' => $aid, 'status' => CommentModel::STATUS_PUBLISHED])->order('create_time desc')->paginate(6, false, ['query' => input('param.')]);
+        $page         = $list->render();
         View::assign('comments', $list);
         View::assign('page', $page);
 
@@ -190,22 +188,22 @@ class Article extends Base
             $this->error('标签不能为空');
         }
         $where = [
-            'status' => ArticleModel::STATUS_PUBLISHED,
-            'meta.meta_value' => $tag
+            'status'          => ArticleModel::STATUS_PUBLISHED,
+            'meta.meta_value' => $tag,
         ];
 
         $fields = 'article.id,title,description,keywords,author,thumb_image_id,post_time,article.update_time,article.create_time,is_top,status,read_count,comment_count,sort,ad_id';
         $orders = [
-            'post_time' => 'desc',
-            'update_time' => 'desc'
+            'post_time'   => 'desc',
+            'update_time' => 'desc',
         ];
-        $listRow = input('param.list_rows/d') ? input('param.list_rows/d') : 20;
+        $listRow    = input('param.list_rows/d') ? input('param.list_rows/d') : 20;
         $pageConfig = [
-            'query' => input('param.')
+            'query' => input('param.'),
         ];
 
         $ArticleModel = new ArticleModel();
-        $list = $ArticleModel->alias('article')->leftJoin('cms_article_meta meta', 'article.id = meta.article_id')->where($where)->field($fields)->order($orders)->paginate($listRow, false, $pageConfig);
+        $list         = $ArticleModel->alias('article')->leftJoin('cms_article_meta meta', 'article.id = meta.article_id')->where($where)->field($fields)->order($orders)->paginate($listRow, false, $pageConfig);
 
         View::assign('list', $list);
         View::assign('tag', $tag);

@@ -8,12 +8,11 @@
 
 namespace app\admin\job;
 
-use think\queue\Job;
-use think\facade\Log;
-
-use app\common\model\ArticleModel;
 use app\common\model\ArticleDataModel;
 use app\common\model\ArticleMetaModel;
+use app\common\model\ArticleModel;
+use think\facade\Log;
+use think\queue\Job;
 
 class Article
 {
@@ -88,11 +87,11 @@ class Article
     {
         Log::info('定时发布文章 job, start...');
 
-        $result = self::postTimingArticles();
+        $result       = self::postTimingArticles();
         $successCount = $result['success_count'];
-        $failCount = $result['fail_count'];
+        $failCount    = $result['fail_count'];
 
-        Log::info("定时发布文章 stat:  ($successCount) success, (" . ($failCount) .") error!");
+        Log::info("定时发布文章 stat:  ($successCount) success, (" . ($failCount) . ") error!");
         Log::info('定时发布文章 job end...');
     }
 
@@ -107,21 +106,21 @@ class Article
     public static function postTimingArticles()
     {
         $currentTime = date_time();
-        $where = [
+        $where       = [
             ['meta_key', '=', ArticleMetaModel::KEY_TIMING_POST],
-            ['meta_value', '<=', $currentTime]
+            ['meta_value', '<=', $currentTime],
         ];
 
         $ArticleMetaModel = new ArticleMetaModel();
-        $metas = $ArticleMetaModel->where($where)->select();
+        $metas            = $ArticleMetaModel->where($where)->select();
         //print_r($metas);
 
-        $totalCount = count($metas);
+        $totalCount   = count($metas);
         $successCount = 0;
         foreach ($metas as $meta) {
             $articleId = $meta->article_id;
 
-            $ArticleModel = ArticleModel::get($articleId);
+            $ArticleModel = ArticleModel::find($articleId);
             if ($ArticleModel['status'] == ArticleModel::STATUS_PUBLISHED
                 || $ArticleModel['status'] == ArticleModel::STATUS_DELETED) {
                 ArticleMetaModel::destroy(['id' => $meta->id]);
@@ -129,11 +128,11 @@ class Article
             }
 
             $data = [
-                'status' => ArticleModel::STATUS_PUBLISHED,
+                'status'    => ArticleModel::STATUS_PUBLISHED,
                 'post_time' => $meta->meta_value,
             ];
 
-            $result = $ArticleModel->isUpdate(true)->save($data, ['id' => $articleId]);
+            $result = $ArticleModel->save($data);
             if ($result) {
                 $successCount++;
             }
@@ -165,17 +164,17 @@ class Article
 
         $ids = ArticleModel::where($where)->column('id');
 
-        $totalCount = count($ids);
+        $totalCount   = count($ids);
         $successCount = 0;
         foreach ($ids as $id) {
-            $ArticleModel = ArticleModel::get($id);
+            $ArticleModel = ArticleModel::find($id);
 
             $data = [
-                'status' => ArticleModel::STATUS_PUBLISHED,
+                'status'    => ArticleModel::STATUS_PUBLISHED,
                 'post_time' => date_time(),
             ];
 
-            $result = $ArticleModel->isUpdate(true)->save($data, ['id' => $id]);
+            $result = $ArticleModel->save($data);
             if ($result) {
                 $successCount++;
             }
@@ -190,14 +189,14 @@ class Article
     //全量相似度计算
     public static function fullSimilarCompute($articleId)
     {
-        $article = ArticleModel::get($articleId);
-        if (!$article) {
+        $article = ArticleModel::findOrEmpty($articleId);
+        if ($article->isEmpty()) {
             return false;
         }
 
         $lcs = new \app\common\library\LCS();
 
-        $ArticleModel = new ArticleModel();
+        $ArticleModel     = new ArticleModel();
         $ArticleDataModel = new ArticleDataModel();
 
         $where = [
@@ -208,26 +207,26 @@ class Article
 
         $articleDatas = [];
         foreach ($list as $temp) {
-            $titleSimilar = $lcs->getSimilar($article->title, $temp->title);
+            $titleSimilar   = $lcs->getSimilar($article->title, $temp->title);
             $contentSimilar = $titleSimilar;
 
             if ($article->id <= $temp->id) {
                 $data = [
-                    'article_a_id' => $article->id,
-                    'article_b_id' => $temp->id,
-                    'title_similar' => $titleSimilar,
+                    'article_a_id'    => $article->id,
+                    'article_b_id'    => $temp->id,
+                    'title_similar'   => $titleSimilar,
                     'content_similar' => $contentSimilar,
-                    'update_time' => date_time(),
-                    'create_time' => date_time(),
+                    'update_time'     => date_time(),
+                    'create_time'     => date_time(),
                 ];
             } else {
                 $data = [
-                    'article_a_id' => $temp->id,
-                    'article_b_id' => $article->id,
-                    'title_similar' => $titleSimilar,
+                    'article_a_id'    => $temp->id,
+                    'article_b_id'    => $article->id,
+                    'title_similar'   => $titleSimilar,
                     'content_similar' => $contentSimilar,
-                    'update_time' => date_time(),
-                    'create_time' => date_time(),
+                    'update_time'     => date_time(),
+                    'create_time'     => date_time(),
                 ];
             }
 
@@ -259,7 +258,7 @@ class Article
                 break;
             }
         }
-        array_splice($articleDatas, $i+1, 0, [$data]);
+        array_splice($articleDatas, $i + 1, 0, [$data]);
 
 //        Log::info($articleDatas);
         if (count($articleDatas) > 20) {

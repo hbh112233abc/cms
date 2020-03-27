@@ -8,16 +8,14 @@
 
 namespace app\admin\job;
 
+use app\common\model\ArticleModel;
 use app\common\model\CrawlerMetaModel;
+use app\common\model\CrawlerModel;
+use QL\QueryList;
 use think\facade\Env;
 use think\facade\Log;
-use think\queue\Job;
 use think\Queue;
-
-use QL\QueryList;
-
-use app\common\model\CrawlerModel;
-use app\common\model\ArticleModel;
+use think\queue\Job;
 
 //采集抓取任务
 class Crawler
@@ -39,19 +37,19 @@ class Crawler
             return;
         }
 
-        $crawler = CrawlerModel::get($id);
-        if (!$crawler) {
+        $crawler = CrawlerModel::findOrEmpty($id);
+        if ($crawler->isEmpty()) {
             Log::info('采集规则不存在!');
             $job->delete();
             return;
         }
 
-        $url = $crawler['url'];
+        $url        = $crawler['url'];
         $articleUrl = $crawler['article_url'];
-        $isPaging = $crawler['is_paging'];
-        $startPage = $crawler['start_page'];
-        $endPage = $crawler['end_page'];
-        $pagingUrl = $crawler['paging_url'];
+        $isPaging   = $crawler['is_paging'];
+        $startPage  = $crawler['start_page'];
+        $endPage    = $crawler['end_page'];
+        $pagingUrl  = $crawler['paging_url'];
 
         $urls = Crawler::crawlUrls($url, $articleUrl, $isPaging, $startPage, $endPage, $pagingUrl, $id);
         if (empty($urls)) {
@@ -66,10 +64,10 @@ class Crawler
         //文章网址入库，存储至meta
         $metas = [];
         foreach ($urls as $metaValue) {
-            $item = [];
-            $item['target_id'] = $id;
-            $item['meta_key'] = 'article_url';
-            $item['remark'] = CrawlerMetaModel::STATUS_WAREHOUSING;
+            $item               = [];
+            $item['target_id']  = $id;
+            $item['meta_key']   = 'article_url';
+            $item['remark']     = CrawlerMetaModel::STATUS_WAREHOUSING;
             $item['meta_value'] = $metaValue;
 
             //已经抓取过的，不再入库；避免重复抓取
@@ -91,15 +89,14 @@ class Crawler
         $CrawlerMetaModel = new CrawlerMetaModel();
         $CrawlerMetaModel->saveAll($metas);
 
-
         Log::info($metaCount . '篇文章网址已入库');
 
         $uid = $data['uid'];
         //发送消息，进行文章内容采集；
-        $jobHandlerClass  = 'app\admin\job\Crawler@crawlArticles';
-        $jobData = ['id' => $id, 'uid' => $uid, 'create_time' => date_time()];
-        $jobQueue = config('queue.default');
-        $isPushed = Queue::push($jobHandlerClass, $jobData, $jobQueue);
+        $jobHandlerClass = 'app\admin\job\Crawler@crawlArticles';
+        $jobData         = ['id' => $id, 'uid' => $uid, 'create_time' => date_time()];
+        $jobQueue        = config('queue.default');
+        $isPushed        = Queue::push($jobHandlerClass, $jobData, $jobQueue);
     }
 
     /**
@@ -120,8 +117,8 @@ class Crawler
             return;
         }
 
-        $crawler = CrawlerModel::get($id);
-        if (!$crawler) {
+        $crawler = CrawlerModel::findOrEmpty($id);
+        if ($crawler->isEmpty()) {
             Log::info('采集规则不存在!');
             $job->delete();
             return;
@@ -137,7 +134,7 @@ class Crawler
         $where = [
             ['target_id', '=', $id],
             ['meta_key', '=', 'article_url'],
-            ['remark', '=', CrawlerMetaModel::STATUS_WAREHOUSING]
+            ['remark', '=', CrawlerMetaModel::STATUS_WAREHOUSING],
         ];
         $numRows = $CrawlerMetaModel->where($where)->count('id');
         if ($numRows <= 0) {
@@ -148,24 +145,24 @@ class Crawler
             return;
         }
 
-        $uid = $data['uid'];
+        $uid        = $data['uid'];
         $categoryId = $crawler['category_id'];
 
-        $encoding = $crawler['encoding'];
-        $articleTitle = $crawler['article_title'];
+        $encoding           = $crawler['encoding'];
+        $articleTitle       = $crawler['article_title'];
         $articleDescription = $crawler['article_description'];
-        $articleKeywords = $crawler['article_keywords'];
-        $articleContent = $crawler['article_content'];
-        $articleAuthor = $crawler['article_author'];
-        $articleImage = $crawler['article_image'];
+        $articleKeywords    = $crawler['article_keywords'];
+        $articleContent     = $crawler['article_content'];
+        $articleAuthor      = $crawler['article_author'];
+        $articleImage       = $crawler['article_image'];
 
         $resultSet = $CrawlerMetaModel->where($where)->limit(2)->select();
-        $articles = [];
+        $articles  = [];
         foreach ($resultSet as $meta) {
             //开始采集
             $CrawlerMetaModel::update(['remark' => CrawlerMetaModel::STATUS_PENDING], ['id' => $meta['id']]);
 
-            $url = $meta['meta_value'];
+            $url     = $meta['meta_value'];
             $article = Crawler::crawlArticle($url, $encoding, $articleTitle, $articleDescription, $articleKeywords, $articleContent, $articleAuthor, $articleImage);
             if ($article) {
                 $articles[] = $article;
@@ -180,21 +177,21 @@ class Crawler
 
         Log::info('采集文章Job结束###');
 //        if (count($articles) <= 0) {
-//            $job->delete();
-//            return;
-//        }
+        //            $job->delete();
+        //            return;
+        //        }
 
         //文章入库，存入文章表中;
         foreach ($articles as $vo) {
-            $item = [];
-            $item['title'] = $vo['title'];
-            $item['description'] = $vo['description'];
-            $item['keywords'] = $vo['keywords'];
-            $item['content'] = $vo['content'];
-            $item['author'] = $vo['author'];
-            $item['read_count'] = 0;
-            $item['user_id'] = $uid;
-            $item['status'] = ArticleModel::STATUS_DRAFT;
+            $item                 = [];
+            $item['title']        = $vo['title'];
+            $item['description']  = $vo['description'];
+            $item['keywords']     = $vo['keywords'];
+            $item['content']      = $vo['content'];
+            $item['author']       = $vo['author'];
+            $item['read_count']   = 0;
+            $item['user_id']      = $uid;
+            $item['status']       = ArticleModel::STATUS_DRAFT;
             $item['category_ids'] = [$categoryId];
 
             $article = new ArticleModel();
@@ -203,12 +200,11 @@ class Crawler
 
         Log::info('文章成功入库，数量：' . count($articles));
 
-
         //再次发送消息，进行文章内容采集；
-        $jobHandlerClass  = 'app\admin\job\Crawler@crawlArticles';
-        $jobData = ['id' => $id, 'uid' => $uid, 'create_time' => date_time()];
-        $jobQueue = config('queue.default');
-        $isPushed = Queue::push($jobHandlerClass, $jobData, $jobQueue);
+        $jobHandlerClass = 'app\admin\job\Crawler@crawlArticles';
+        $jobData         = ['id' => $id, 'uid' => $uid, 'create_time' => date_time()];
+        $jobQueue        = config('queue.default');
+        $isPushed        = Queue::push($jobHandlerClass, $jobData, $jobQueue);
     }
 
     //定时采集
@@ -223,9 +219,9 @@ class Crawler
     //抓取文章网址，返回列表数组
     public static function crawlUrls($url, $articleUrl, $isPaging, $startPage, $endPage, $pagingUrl)
     {
-        $urlArr = explode('/', $url);
+        $urlArr   = explode('/', $url);
         $protocol = str_replace(':', '', $urlArr[0]);
-        $baseUrl = $protocol . ':' . '//' . $urlArr[2];
+        $baseUrl  = $protocol . ':' . '//' . $urlArr[2];
 
         $urls = [];
         if ($isPaging) {
@@ -244,7 +240,7 @@ class Crawler
             Log::info("采集 $v");
             //采集规则, '规则名1' => ['选择器1','元素属性'],
             $rules = [
-                'url' => explode(',', $articleUrl)
+                'url' => explode(',', $articleUrl),
             ];
             //dump($rules);
             $result = $ql->get($v)->rules($rules)->queryData();
@@ -270,7 +266,7 @@ class Crawler
     }
 
     //抓取文章内容，返回数组
-    public static function crawlArticle($url, $encoding, $articleTitle, $articleDescription, $articleKeywords, $articleContent, $articleAuthor, $articleImage='')
+    public static function crawlArticle($url, $encoding, $articleTitle, $articleDescription, $articleKeywords, $articleContent, $articleAuthor, $articleImage = '')
     {
         //采集urls中的文章网址
         $ql = QueryList::getInstance();
@@ -278,10 +274,10 @@ class Crawler
         Log::info("采集 $url");
         //采集规则, '规则名1' => ['选择器1','元素属性'],
         $rules = [
-            'title' => explode(',', $articleTitle),
+            'title'       => explode(',', $articleTitle),
             'description' => explode(',', $articleDescription),
-            'keywords' => explode(',', $articleKeywords),
-            'content' => explode(',', $articleContent),
+            'keywords'    => explode(',', $articleKeywords),
+            'content'     => explode(',', $articleContent),
         ];
         if (!empty($articleAuthor)) {
             $rules['author'] = explode(',', $articleAuthor);
@@ -293,9 +289,9 @@ class Crawler
             //配置不进行ssl验证
             $streamOpts = [
                 "ssl" => [
-                    "verify_peer" => false,
+                    "verify_peer"      => false,
                     "verify_peer_name" => false,
-                ]
+                ],
             ];
             $html = file_get_contents($url, false, stream_context_create($streamOpts));
             //dump($html);
@@ -311,29 +307,29 @@ class Crawler
             return false;
         }
 
-        $article = $result[0];
-        $article['title'] = isset($article['title']) ? mb_convert_encoding($article['title'], 'utf-8', $encoding) : '';
+        $article                = $result[0];
+        $article['title']       = isset($article['title']) ? mb_convert_encoding($article['title'], 'utf-8', $encoding) : '';
         $article['description'] = isset($article['description']) ? mb_convert_encoding($article['description'], 'utf-8', $encoding) : '';
-        $article['content'] = isset($article['content']) ? mb_convert_encoding($article['content'], 'utf-8', $encoding) : '';
-        $article['keywords'] = isset($article['keywords']) ? mb_convert_encoding($article['keywords'], 'utf-8', $encoding) : '';
-        $article['author'] = isset($article['author']) ? mb_convert_encoding($article['author'], 'utf-8', $encoding) : '';
+        $article['content']     = isset($article['content']) ? mb_convert_encoding($article['content'], 'utf-8', $encoding) : '';
+        $article['keywords']    = isset($article['keywords']) ? mb_convert_encoding($article['keywords'], 'utf-8', $encoding) : '';
+        $article['author']      = isset($article['author']) ? mb_convert_encoding($article['author'], 'utf-8', $encoding) : '';
 
         //清除xss元素及内容
         $article['content'] = htmlspecialchars_decode(remove_xss($article['content']));
 
         //抓取图片
-        $doc = \phpQuery::newDocumentHTML($article['content']);
-        $imgs = pq($doc)->find( 'img');
+        $doc  = \phpQuery::newDocumentHTML($article['content']);
+        $imgs = pq($doc)->find('img');
         if (count($imgs) > 0) {
             foreach ($imgs as $img) {
-                $src = pq($img)->attr( 'src');
-                $src = self::getFullUrl($url, $src);
+                $src        = pq($img)->attr('src');
+                $src        = self::getFullUrl($url, $src);
                 $saveResult = json_decode(self::saveRemoteImage($src), true);
                 Log::info('保存远程图片:');
                 Log::info($saveResult);
                 if ($saveResult['state'] === 'SUCCESS') {
                     $localSrc = $saveResult['url'];
-                    pq($img)->attr( 'src', $localSrc);
+                    pq($img)->attr('src', $localSrc);
                 }
             }
             $article['content'] = $doc->htmlOuter();
@@ -353,7 +349,7 @@ class Crawler
         if (preg_match('/^[a-zA-Z]+:\/\/(\w+(-\w+)*)(\.(\w+(-\w+)*))*(\?\s*)?$/', $html)) {
             $text = file_get_contents($html);
         }
-        $encoding = preg_match("/<meta.+?charset=[^\w]?([-\w]+)/i", $text,$matches) ? strtolower($matches[1]) : "";
+        $encoding = preg_match("/<meta.+?charset=[^\w]?([-\w]+)/i", $text, $matches) ? strtolower($matches[1]) : "";
         return $encoding;
     }
 
@@ -369,9 +365,9 @@ class Crawler
             return $innerUrl;
         }
 
-        $urlArr = explode('/', $browserUrl);
+        $urlArr   = explode('/', $browserUrl);
         $protocol = str_replace(':', '', $urlArr[0]);
-        $baseUrl = $protocol . ':' . '//' . $urlArr[2];
+        $baseUrl  = $protocol . ':' . '//' . $urlArr[2];
 
         $val = '';
         if (strpos($innerUrl, '//') === 0) {
@@ -393,18 +389,17 @@ class Crawler
         //使用ueditor.json作为配置信息
         $configJson = file_get_contents(Env::get('config_path') . "ueditor.json");
         $configJson = preg_replace("/\/\*[\s\S]+?\*\//", "", $configJson);
-        $CONFIG = json_decode($configJson, true);
+        $CONFIG     = json_decode($configJson, true);
         // 保留需要的数据
         $config = array(
             "pathFormat" => $CONFIG['catcherPathFormat'],
-            "maxSize" => $CONFIG['catcherMaxSize'],
+            "maxSize"    => $CONFIG['catcherMaxSize'],
             "allowFiles" => $CONFIG['catcherAllowFiles'],
-            "oriName" => "remote.png"
+            "oriName"    => "remote.png",
         );
 
         $rootPath = Env::get('root_path') . 'public';
-        $savePath = DIRECTORY_SEPARATOR . 'upload'. DIRECTORY_SEPARATOR;
-
+        $savePath = DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR;
 
         $imgUrl = htmlspecialchars($imgUrl);
         $imgUrl = str_replace("&amp;", "&", $imgUrl);
@@ -425,18 +420,18 @@ class Crawler
             return json_encode($data);
         }
         //格式验证(扩展名验证和Content-Type验证)
-        $fileType = strtolower(strrchr(strrchr($imgUrl,'/'), '.'));
+        $fileType = strtolower(strrchr(strrchr($imgUrl, '/'), '.'));
         //img链接后缀可能为空,Content-Type须为image
         if ((!empty($fileType) && !in_array($fileType, $config['allowFiles'])) || stristr($heads['Content-Type'], "image") === -1) {
             $data = array(
-                'state'=>'链接contentType不正确',
+                'state' => '链接contentType不正确',
             );
             return json_encode($data);
         }
 
         //解析出域名作为http_referer
-        $urlArr = explode('/', $imgUrl);
-        $protocol = str_replace(':', '', $urlArr[0]);
+        $urlArr      = explode('/', $imgUrl);
+        $protocol    = str_replace(':', '', $urlArr[0]);
         $httpReferer = $protocol . ':' . '//' . $urlArr[2];
 
         //打开输出缓冲区并获取远程图片
@@ -444,11 +439,11 @@ class Crawler
         $context = stream_context_create([
             'http' => array(
                 //'header' => "Referer:$httpReferer",  //突破防盗链,不可用
-                'user_agent' => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36', //突破防盗链
-                'follow_location' => false // don't follow redirects
+                'user_agent'      => 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36', //突破防盗链
+                'follow_location' => false, // don't follow redirects
             ),
         ]);
-        $res = false;
+        $res     = false;
         $message = '';
         try {
             $res = readfile($imgUrl, false, $context);
@@ -469,14 +464,14 @@ class Crawler
         //$m为文件名
         preg_match("/[\/]([^\/]*)[\.]?[^\.\/]*$/", $imgUrl, $m);
 
-        $savePath = $savePath . date('Ymd') . DIRECTORY_SEPARATOR;
-        $dirname = $rootPath . $savePath;
-        $file['oriName'] = $m ? $m[1]:"";
+        $savePath         = $savePath . date('Ymd') . DIRECTORY_SEPARATOR;
+        $dirname          = $rootPath . $savePath;
+        $file['oriName']  = $m ? $m[1] : "";
         $file['filesize'] = strlen($img);
-        $file['ext'] = strtolower(strrchr($config['oriName'], '.'));
-        $file['name'] = uniqid() . $file['ext'];
+        $file['ext']      = strtolower(strrchr($config['oriName'], '.'));
+        $file['name']     = uniqid() . $file['ext'];
         $file['fullName'] = $dirname . $file['name'];
-        $fullName = $file['fullName'];
+        $fullName         = $file['fullName'];
 
         //检查文件大小是否超出限制
         if ($file['filesize'] >= ($config["maxSize"])) {
@@ -488,7 +483,7 @@ class Crawler
 
         //创建目录失败
         if (!file_exists($dirname) &&
-            !(mkdir($dirname, 0777, true) && chown($dirname, Env::get('run.user'))) ) {
+            !(mkdir($dirname, 0777, true) && chown($dirname, Env::get('run.user')))) {
             $data = array(
                 'state' => '目录创建失败',
             );
@@ -501,19 +496,21 @@ class Crawler
         }
 
         //移动文件
-        if (!(file_put_contents($fullName, $img) && file_exists($fullName))) { //移动失败
+        if (!(file_put_contents($fullName, $img) && file_exists($fullName))) {
+            //移动失败
             $data = array(
                 'state' => '写入文件内容错误',
             );
             return json_encode($data);
-        } else { //移动成功
+        } else {
+            //移动成功
             $data = array(
-                'state' => 'SUCCESS',
-                'url' => config('view_replace_str.__PUBLIC__') . str_replace(DIRECTORY_SEPARATOR, '/', $savePath.$file['name']),
-                'title' => $file['name'],
+                'state'    => 'SUCCESS',
+                'url'      => config('view_replace_str.__PUBLIC__') . str_replace(DIRECTORY_SEPARATOR, '/', $savePath . $file['name']),
+                'title'    => $file['name'],
                 'original' => $file['oriName'],
-                'type' => $file['ext'],
-                'size' => $file['filesize'],
+                'type'     => $file['ext'],
+                'size'     => $file['filesize'],
             );
         }
         return json_encode($data);

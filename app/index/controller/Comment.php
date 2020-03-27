@@ -30,7 +30,7 @@ class Comment extends Base
     public function index($aid = 0)
     {
         $ArticleModel = new ArticleModel();
-        $article = $ArticleModel->find($aid);
+        $article      = $ArticleModel->find($aid);
         if (empty($article)) {
             $this->error('文章不存在');
         }
@@ -50,14 +50,14 @@ class Comment extends Base
     public function create($aid = 0)
     {
         $ArticleModel = new ArticleModel();
-        $article = $ArticleModel->field('id,title')->find($aid);
+        $article      = $ArticleModel->field('id,title')->find($aid);
         View::assign('aid', $aid);
         View::assign('article', $article);
 
         if (request()->isPost() || request()->isAjax()) {
-            $aid = input('aid/d', 0);
+            $aid     = input('aid/d', 0);
             $content = input('content/s', '');
-            $check = $this->validate(input('param.'), 'Comment.create');
+            $check   = $this->validate(input('param.'), 'Comment.create');
             if ($check !== true) {
                 $this->error($check);
             }
@@ -66,19 +66,19 @@ class Comment extends Base
 
             $data = [];
             if (session('uid')) {
-                $uid = session('uid');
-                $user = UserModel::get($uid);
-                $author = $user->nickname;
-                $data['uid'] = $uid;
+                $uid            = session('uid');
+                $user           = UserModel::find($uid);
+                $author         = $user->nickname;
+                $data['uid']    = $uid;
                 $data['author'] = $author;
             } else {
-                $author = session('visitor');
+                $author         = session('visitor');
                 $data['author'] = $author;
             }
 
-            $author = input('author', '');
+            $author      = input('author', '');
             $authorEmail = input('author_email', '');
-            $authorUrl = input('author_url', '');
+            $authorUrl   = input('author_url', '');
             if (!empty($author)) {
                 $data['author'] = $author;
             }
@@ -90,11 +90,11 @@ class Comment extends Base
             }
 
             $data['create_time'] = date_time();
-            $data['ip'] = request()->ip(0, true);
-            $data['article_id'] = $aid;
-            $data['content'] = $content;
-            $CommentModel = new CommentModel();
-            $result = $CommentModel->save($data);
+            $data['ip']          = request()->ip(0, true);
+            $data['article_id']  = $aid;
+            $data['content']     = $content;
+            $CommentModel        = new CommentModel();
+            $result              = $CommentModel->save($data);
 
             if (!$result) {
                 $this->error('评论发表失败！');
@@ -103,7 +103,7 @@ class Comment extends Base
                 $ArticleModel->where('id', $aid)->setInc('comment_count');
 
                 //发送评论消息;
-                $msgTitle = '新评论消息';
+                $msgTitle   = '新评论消息';
                 $msgContent = $author . '评论了文章 “' . $article['title'] . '”';
                 send_message(0, 1, $msgTitle, $msgContent, MessageModel::TYPE_COMMENT);
 

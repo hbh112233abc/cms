@@ -2,8 +2,6 @@
 
 namespace app\common\model;
 
-use think\facade\Env;
-
 /**
  * 权限规则model
  */
@@ -11,17 +9,17 @@ class AuthRuleModel extends BaseModel
 {
     protected $name = CMS_PREFIX . 'auth_rule';
 
-    public static function init()
+    public static function onAfterInsert($menu)
     {
-        AuthRuleModel::afterInsert(function ($menu) {
-            Cache::clear('menu');
-        });
-        AuthRuleModel::afterUpdate(function ($menu) {
-            Cache::clear('menu');
-        });
-        AuthRuleModel::afterDelete(function ($menu) {
-            Cache::clear('menu');
-        });
+        Cache::clear('menu');
+    }
+    public static function onAfterUpdate($menu)
+    {
+        Cache::clear('menu');
+    }
+    public static function onAfterDelete($menu)
+    {
+        Cache::clear('menu');
     }
 
     /**
@@ -58,7 +56,7 @@ class AuthRuleModel extends BaseModel
     public function getTreeDataBelongto($type = 'tree', $order = 'sort', $name = 'name', $fieldPK = 'id', $filedPid = 'pid', $belongto = '')
     {
         $where = [
-            'belongto' => $belongto
+            'belongto' => $belongto,
         ];
         // 判断是否需要排序
         if (empty($order)) {
@@ -68,14 +66,16 @@ class AuthRuleModel extends BaseModel
         }
         $data = $data->toArray();
         // 获取树形或者结构数据
-        include_once(root_path() . 'extend/' . 'tree/Data.class.php');
+        include_once root_path() . 'extend/' . 'tree/Data.class.php';
         $tree = new \tree\Data;
-        if ($type == 'tree') { //供给如下拉菜单使用
+        if ($type == 'tree') {
+            //供给如下拉菜单使用
             $data = $tree::tree($data, $name, $fieldPK, $filedPid);
-        } else if ($type == "level") { //给左测菜单使用
+        } else if ($type == "level") {
+            //给左测菜单使用
             $data = $tree::channelLevel($data, 0, '&nbsp;', $fieldPK);
 
-            $auth = new \think\auth\Auth();
+            $auth = new \liliuwei\think\Auth;
             //清理不显示的菜单
             foreach ($data as $k => $v) {
                 //是否菜单

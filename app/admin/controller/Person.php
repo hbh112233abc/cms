@@ -17,13 +17,13 @@ class Person extends Base
     public function index()
     {
         //个人信息
-        $uid = session('uid');
-        $user = UserModel::get($uid);
+        $uid  = session('uid');
+        $user = UserModel::find($uid);
         View::assign('user', $user);
 
         //个人文章
         $ArticleModel = new ArticleModel();
-        $articleList = $ArticleModel->where('user_id', $uid)->where('status', '>=', 0)->order('update_time desc')->paginate(20, false);
+        $articleList  = $ArticleModel->where('user_id', $uid)->where('status', '>=', 0)->order('update_time desc')->paginate(20, false);
         View::assign('articleList', $articleList);
 
         return View::fetch('index');
@@ -36,19 +36,18 @@ class Person extends Base
 
         if (request()->isAjax()) {
             $nickname = input('param.nickname');
-            $qq = input('param.qq');
-            $weixin = input('param.weixin');
+            $qq       = input('param.qq');
+            $weixin   = input('param.weixin');
 
             $UserModel = new UserModel();
-            $res = $UserModel->setProfile($uid, $nickname, '', '', $qq, $weixin);
+            $res       = $UserModel->setProfile($uid, $nickname, '', '', $qq, $weixin);
             if (!$res) {
                 return $this->error($UserModel->getError());
             }
             return $this->success('修改成功');
         }
 
-
-        $user = UserModel::get($uid);
+        $user = UserModel::find($uid);
         View::assign('user', $user);
 
         return View::fetch('profile');
@@ -62,17 +61,17 @@ class Person extends Base
             $data = input('post.');
             //验证
             $validate = validate('User');
-            $check = $validate->scene('modifyPassword')->check($data);
+            $check    = $validate->scene('modifyPassword')->check($data);
             if ($check !== true) {
                 return $this->error($validate->getError());
             }
 
             $oldPassword = input("param.password");
-            $password = input("param.newPwd");
+            $password    = input("param.newPwd");
 
-            $userId = session("uid");
+            $userId    = session("uid");
             $userLogic = new UserLogic();
-            $result = $userLogic->modifyPassword($userId, $oldPassword, $password);
+            $result    = $userLogic->modifyPassword($userId, $oldPassword, $password);
             if (!$result) {
                 return $this->error("出错了!");
             }

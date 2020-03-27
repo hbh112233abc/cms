@@ -16,10 +16,11 @@ use think\facade\Log;
 
 //cms核心表前缀;
 define('CMS_PREFIX', 'cms_');
-if (\think\facade\Config::get('cache.type') == 'Redis')
+if (\think\facade\Config::get('cache.type') == 'Redis') {
     define('CACHE_SEPARATOR', ':');
-else
+} else {
     define('CACHE_SEPARATOR', '_');
+}
 
 function ip()
 {
@@ -33,7 +34,7 @@ function ip()
     } elseif (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] && strcasecmp($_SERVER['REMOTE_ADDR'], 'unknown')) {
         $ip = $_SERVER['REMOTE_ADDR'];
     }
-    $res =  preg_match('/[\d\.]{7,15}/', $ip, $matches) ? $matches[0] : '';
+    $res = preg_match('/[\d\.]{7,15}/', $ip, $matches) ? $matches[0] : '';
     return $res;
     //dump(phpinfo());//所有PHP配置信息
 }
@@ -75,23 +76,23 @@ function ip_to_address($ip, $fields = '')
     }
 
     //添加地区
-    $country = '未知';
+    $country  = '未知';
     $province = '未知';
-    $city = '未知';
-    $isp = '';
+    $city     = '未知';
+    $isp      = '';
     try {
-        $ipInfo = \IP::find($ip);
-        $country = $ipInfo[0];
+        $ipInfo   = \IP::find($ip);
+        $country  = $ipInfo[0];
         $province = $ipInfo[1];
-        $city = $ipInfo[2];
-        $isp = $ipInfo[3];
+        $city     = $ipInfo[2];
+        $isp      = $ipInfo[3];
     } catch (Exception $e) {
         Log::error($e);
     }
-    $data['country'] = $country;
+    $data['country']  = $country;
     $data['province'] = $province;
-    $data['city'] = $city;
-    $data['isp'] = $isp;
+    $data['city']     = $city;
+    $data['isp']      = $isp;
 
     //移除不需要的字段
     if (!empty($fields)) {
@@ -141,15 +142,15 @@ function zip($path, $savedir)
     $zip = new \ZipArchive();
     $zip->open($savedir . DIRECTORY_SEPARATOR . $filename, ZIPARCHIVE::OVERWRITE);
     if (is_file($path)) {
-        $path = preg_replace('/\/\//', '/', $path);
-        $base_dir = preg_replace('/\/[\d\D][^\/]*$/', '/', $path);
-        $base_dir = addcslashes($base_dir, '/:');
+        $path      = preg_replace('/\/\//', '/', $path);
+        $base_dir  = preg_replace('/\/[\d\D][^\/]*$/', '/', $path);
+        $base_dir  = addcslashes($base_dir, '/:');
         $localname = preg_replace('/' . $base_dir . '/', '', $path);
         $zip->addFile($path, $localname);
         $zip->close();
         return $filename;
     } elseif (is_dir($path)) {
-        $path = preg_replace('/\/[\d\D][^\/]*$/', '', $path);
+        $path     = preg_replace('/\/[\d\D][^\/]*$/', '', $path);
         $base_dir = $path . '/'; //基目录
         $base_dir = addcslashes($base_dir, '/:');
     }
@@ -161,7 +162,8 @@ function zip($path, $savedir)
         while (false !== ($file = readdir($handle))) {
             if (($file != '.') && ($file != '..')) {
                 $ipath = $path . DIRECTORY_SEPARATOR . $file;
-                if (is_file($ipath)) { //条目是文件
+                if (is_file($ipath)) {
+                    //条目是文件
                     $localname = preg_replace('/' . $base_dir . '/', '', $ipath);
                     var_dump($localname);
                     $zip->addFile($ipath, $localname);
@@ -188,8 +190,8 @@ function zip($path, $savedir)
 function ezip($zip, $hedef = '')
 {
     $dirname = preg_replace('/.zip/', '', $zip);
-    $root = $_SERVER['DOCUMENT_ROOT'] . '/zip/';
-    $zip = zip_open($root . $zip);
+    $root    = $_SERVER['DOCUMENT_ROOT'] . '/zip/';
+    $zip     = zip_open($root . $zip);
     @mkdir($root . $hedef . $dirname . '/' . $zip_dosya);
     while ($zip_icerik = zip_read($zip)) {
         $zip_dosya = zip_entry_name($zip_icerik);
@@ -201,8 +203,10 @@ function ezip($zip, $hedef = '')
             @fclose($yeni_dosya);
         } else {
             @mkdir($root . $hedef . $dirname . '/' . $zip_dosya);
-        };
-    };
+        }
+        ;
+    }
+    ;
 }
 
 //日志输出，用于第三方库统一日志输出，如extend或vendor内的库输出
@@ -341,7 +345,7 @@ function parse_fields_by_meta($data, $metaData, $style = 1)
 function millisecond()
 {
     list($msec, $sec) = explode(' ', microtime());
-    $msectime =  (float) sprintf('%.0f', (floatval($msec) + floatval($sec)) * 1000);
+    $msectime         = (float) sprintf('%.0f', (floatval($msec) + floatval($sec)) * 1000);
     return $msectime;
 }
 
@@ -366,7 +370,7 @@ function date_time($time = '', $format = 'Y-m-d H:i:s')
 function obj_to_array(&$object)
 {
     $arr = json_decode(json_encode($object), true);
-    return  $arr;
+    return $arr;
 }
 
 /**
@@ -379,7 +383,7 @@ function get_config($key = '', $default = null)
 {
     if (!cache('config') || config('app_debug')) {
         $ConfigModel = new \app\common\model\ConfigModel();
-        $config = $ConfigModel->column('value', 'name');
+        $config      = $ConfigModel->column('value', 'name');
         cache('config', $config, 5 * 60);
     }
     $config = cache('config');
@@ -403,7 +407,7 @@ function get_theme_config()
     $themeName = get_config('theme_name', '');
     if (empty($themeName)) {
         //通过config文件加载当前主题信息
-        $config = Config::pull('theme');
+        $config    = Config::pull('theme');
         $themeName = $config['theme_name'];
     }
     if (empty($themeName)) {
@@ -411,9 +415,9 @@ function get_theme_config()
     }
 
     //当前主题的存放路径
-    $themePath = root_path()  . 'public' . DIRECTORY_SEPARATOR . 'theme' . DIRECTORY_SEPARATOR . $themeName . DIRECTORY_SEPARATOR;
+    $themePath = root_path() . 'public' . DIRECTORY_SEPARATOR . 'theme' . DIRECTORY_SEPARATOR . $themeName . DIRECTORY_SEPARATOR;
     //读取当前主题详细信息
-    $config = require($themePath . 'theme.php');
+    $config = require $themePath . 'theme.php';
 
     return $config;
 }
@@ -578,16 +582,16 @@ function get_day_limit($date = null, $type = 'int')
         $date = date('Y-m-d');
     }
     $timeStart = strtotime($date);
-    $timeEnd = $timeStart + 3600 * 24 - 1;
+    $timeEnd   = $timeStart + 3600 * 24 - 1;
     if ($type == 'date') {
         $timeStart = date('Y-m-d H:i:s', $timeStart);
-        $timeEnd = date('Y-m-d H:i:s', $timeEnd);
+        $timeEnd   = date('Y-m-d H:i:s', $timeEnd);
     }
 
     $dayLimit = [
         'timeStart' => $timeStart,
-        'timeEnd' => $timeEnd,
-        'map' => ['between', [$timeStart, $timeEnd]]
+        'timeEnd'   => $timeEnd,
+        'map'       => ['between', [$timeStart, $timeEnd]],
     ];
     return $dayLimit;
 }
@@ -598,18 +602,18 @@ function get_month_limit($date = null, $type = 'int')
     if (!$date) {
         $date = date('Y-m-1');
     }
-    $time = strtotime($date);
+    $time      = strtotime($date);
     $timeStart = date('Y-m-1', $time);
-    $timeEnd = date('Y-m-t 23:59:59', $time);
+    $timeEnd   = date('Y-m-t 23:59:59', $time);
     if ($type == 'int') {
         $timeStart = strtotime($timeStart);
-        $timeEnd = strtotime($timeEnd);
+        $timeEnd   = strtotime($timeEnd);
     }
 
     $monthLimit = [
         'timeStart' => $timeStart,
-        'timeEnd' => $timeEnd,
-        'map' => ['between', [$timeStart, $timeEnd]]
+        'timeEnd'   => $timeEnd,
+        'map'       => ['between', [$timeStart, $timeEnd]],
     ];
     return $monthLimit;
 }
@@ -726,15 +730,15 @@ function url_add_domain($url = '')
 //从url中获取域名, $root_domain=true时返回根域名
 function url_get_domain($url = '', $root_domain = false, &$details = [])
 {
-    $tokens = explode('/', $url);
+    $tokens   = explode('/', $url);
     $protocol = str_replace(':', '', $tokens[0]);
-    $domain = $tokens[2];
-    $baseUrl = $protocol . ':' . '//' . $tokens[2]; //更准确的话: $token[0] . '//' . $tokens[2]
-    $path = str_replace($baseUrl, '', $url);
+    $domain   = $tokens[2];
+    $baseUrl  = $protocol . ':' . '//' . $tokens[2]; //更准确的话: $token[0] . '//' . $tokens[2]
+    $path     = str_replace($baseUrl, '', $url);
 
     $details['protocol'] = $protocol;
-    $details['domain'] = $domain;
-    $details['path'] = $path;
+    $details['domain']   = $domain;
+    $details['path']     = $path;
     $details['base_url'] = $baseUrl;
 
     //解析根域名
@@ -786,7 +790,7 @@ function sign_params($params, $secret_key, $sign_type = 'MD5')
     ksort($params);
 
     $paramString = '';
-    $resultSign = '';
+    $resultSign  = '';
     foreach ($params as $key => $value) {
         if ($key == 'sign') {
             continue;
@@ -840,9 +844,9 @@ function remove_xss($html, $isEscape = false)
     Log::info($html);
     preg_match_all("/\<([^\<]+)\>/is", $html, $ms);
 
-    $searches[]  = '<';
+    $searches[] = '<';
     $replaces[] = '&lt;';
-    $searches[]  = '>';
+    $searches[] = '>';
     $replaces[] = '&gt;';
 
     if ($ms[1]) {
@@ -865,7 +869,7 @@ function remove_xss($html, $isEscape = false)
                 'onload', 'onlosecapture', 'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel',
                 'onmove', 'onmoveend', 'onmovestart', 'onpaste', 'onpropertychange', 'onreadystatechange', 'onreset', 'onresize', 'onresizeend', 'onresizestart',
                 'onrowenter', 'onrowexit', 'onrowsdelete', 'onrowsinserted', 'onscroll', 'onselect', 'onselectionchange', 'onselectstart', 'onstart', 'onstop',
-                'onsubmit', 'onunload', 'javascript', 'script', 'eval', 'behaviour', 'expression'
+                'onsubmit', 'onunload', 'javascript', 'script', 'eval', 'behaviour', 'expression',
             );
             $skipStr = implode('|', $skipKeys);
             $value   = preg_replace(array("/($skipStr)/i"), '.', $value);
@@ -890,7 +894,7 @@ function user_count($type = null)
 {
     switch ($type) {
         case 'new':
-            $today = \think\helper\Time::today();
+            $today = \app\common\library\Time::today();
             $map[] = ['register_time', 'between', [date_time($today[0]), date_time($today[1])]];
             break;
         case 'vip':
@@ -905,21 +909,21 @@ function user_count($type = null)
     }
 
     $UserModel = new \app\common\model\UserModel();
-    $count = $UserModel->cache(30)->where($map)->count('user_id');
+    $count     = $UserModel->cache(30)->where($map)->count('user_id');
     return $count;
 }
 
 //发送系统消息、发送站内信、信息反馈等
 function send_message($from, $to, $title, $content = '', $type = 1)
 {
-    $data['type'] = $type;
-    $data['title'] = $title;
-    $data['content'] = $content;
-    $data['status'] = \app\common\model\MessageModel::STATUS_SEND;
-    $data['from_uid'] = $from;
-    $data['to_uid']   = $to;
-    $data['is_readed'] = 0;
-    $data['send_time'] = date_time();
+    $data['type']        = $type;
+    $data['title']       = $title;
+    $data['content']     = $content;
+    $data['status']      = \app\common\model\MessageModel::STATUS_SEND;
+    $data['from_uid']    = $from;
+    $data['to_uid']      = $to;
+    $data['is_readed']   = 0;
+    $data['send_time']   = date_time();
     $data['create_time'] = date_time();
     \app\common\model\MessageModel::create($data);
 }
@@ -942,6 +946,6 @@ function message_count($type = 0, $status = 0, $fromUid = 0, $toUid = 0)
     }
 
     $MessageModel = new \app\common\model\MessageModel();
-    $count = $MessageModel->cache(10)->where($where)->count('id');
+    $count        = $MessageModel->cache(10)->where($where)->count('id');
     return $count;
 }

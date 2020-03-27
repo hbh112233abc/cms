@@ -9,9 +9,7 @@
 
 namespace app\common\logic;
 
-
 use app\common\model\ActionLogModel;
-use think\Model;
 
 class ActionLogLogic
 {
@@ -24,15 +22,15 @@ class ActionLogLogic
 
         $data = [
             'user_id' => $userId,
-            'action' => $action,
-            'module' => request()->module(),
-            'ip' => request()->ip(0, true),
-            'remark' => $remark,
-            'data' => substr(json_encode($data), 0, 128)
+            'action'  => $action,
+            'module'  => app('http')->getName(),
+            'ip'      => request()->ip(0, true),
+            'remark'  => $remark,
+            'data'    => substr(json_encode($data), 0, 128),
         ];
 
         $ActionLogModel = new ActionLogModel();
-        $result = $ActionLogModel->isUpdate(false)->save($data);
+        $result         = $ActionLogModel->save($data);
 
         return $result;
     }

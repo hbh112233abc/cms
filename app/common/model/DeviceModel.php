@@ -37,7 +37,7 @@ class DeviceModel extends BaseModel
             return $this->error = '设备信息为空';
         }
 
-        $res = $this->validate('device.add')->isUpdate(false)->save($client);
+        $res = $this->validate('device.add')->save($client);
         if (!$res) {
             return false;
         }

@@ -8,13 +8,11 @@
 
 namespace app\admin\job;
 
-use think\console\command\Help;
-use think\facade\Log;
-use think\helper\Time;
-use think\queue\Job;
-
-use app\common\model\ArticleModel;
+use app\common\library\Time;
 use app\common\model\ArticleMetaModel;
+use app\common\model\ArticleModel;
+use think\facade\Log;
+use think\queue\Job;
 
 /**
  * 搜索引擎收录业务逻辑及job入口
@@ -38,7 +36,7 @@ class Index
             $today = Time::today();
             $range = [
                 date_time($today[0], 'Y-m-d'),
-                date_time($today[1], 'Y-m-d')
+                date_time($today[1], 'Y-m-d'),
             ];
             self::withRange($range);
         }
@@ -82,7 +80,7 @@ class Index
         $range = array_slice($range, 0, 2);
 
         $where = [
-            ['status', '=', ArticleModel::STATUS_PUBLISHED]
+            ['status', '=', ArticleModel::STATUS_PUBLISHED],
         ];
         if (is_numeric($range[0]) && is_numeric($range[1])) {
             Log::info('range 是 数字区间');
@@ -91,7 +89,7 @@ class Index
             Log::info('range 是 时间区间');
             $range[0] = date_time(strtotime($range[0]));
             $range[1] = date_time(strtotime($range[1] . ' 23:59:59'));
-            $where[] = ['post_time', 'between', $range];
+            $where[]  = ['post_time', 'between', $range];
         }
 
         $list = ArticleModel::where($where)->field('id')->order('id desc')->select();
@@ -104,7 +102,7 @@ class Index
     public static function withAll($all)
     {
         $where = [
-            ['status', '=', ArticleModel::STATUS_PUBLISHED]
+            ['status', '=', ArticleModel::STATUS_PUBLISHED],
         ];
 
         $list = ArticleModel::where($where)->field('id')->order('id desc')->select();

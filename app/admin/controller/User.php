@@ -21,21 +21,21 @@ class User extends Base
     public function index()
     {
         $map['status'] = ['egt', 0];
-        $type = input('param.type');
-        $key = input('param.key');
-        $map = [];
+        $type          = input('param.type');
+        $key           = input('param.key');
+        $map           = [];
         if ($key && $type) {
             switch ($type) {
                 case 'mobile':
-                    $key = trim($key);
+                    $key   = trim($key);
                     $map[] = ['mobile', 'like', "%$key%"];
                     break;
                 case 'email':
-                    $key = trim($key);
+                    $key   = trim($key);
                     $map[] = ['email', 'like', "%$key%"];
                     break;
                 case 'user_id':
-                    $key = intval($key);
+                    $key            = intval($key);
                     $map['user_id'] = $key;
                     break;
                 default:
@@ -44,13 +44,13 @@ class User extends Base
         }
 
         $UserModel = new UserModel();
-        $list = $UserModel->where($map)->order('user_id desc')->with('groups')->paginate(10, false, ['query' => input('param.')]);
+        $list      = $UserModel->where($map)->order('user_id desc')->with('groups')->paginate(10, false, ['query' => input('param.')]);
         if (request()->param('status')) {
             $status = input('param.status');
-            $list = $UserModel->where($map)->where('status', $status)->order('user_id desc')->with('groups')->paginate(10, false, ['query' => input('param.')]);
+            $list   = $UserModel->where($map)->where('status', $status)->order('user_id desc')->with('groups')->paginate(10, false, ['query' => input('param.')]);
         }
 
-        $userTotal = $UserModel->count('user_id');
+        $userTotal   = $UserModel->count('user_id');
         $freezeTotal = $UserModel->where('status', '=', UserModel::STATUS_FREEZED)->count('user_id');
         $activeTotal = $UserModel->where('status', '=', UserModel::STATUS_ACTIVED)->count('user_id');
         View::assign('userTotal', $userTotal);
@@ -67,14 +67,14 @@ class User extends Base
     {
         if (request()->isAjax()) {
             $nickname = input('post.nickname/s');
-            $mobile = input('post.mobile/s');
-            $email = input('post.email/s');
+            $mobile   = input('post.mobile/s');
+            $email    = input('post.email/s');
             $password = input('post.password/s');
             if (!validate('User')->scene('add')->check(input('post.'))) {
                 return $this->error(validate('User')->getError());
             }
             $userModel = new UserModel();
-            $user = $userModel->createUser($mobile, $password, $nickname, $email);
+            $user      = $userModel->createUser($mobile, $password, $nickname, $email);
 
             if ($user) {
                 $data = input('post.');
@@ -82,8 +82,8 @@ class User extends Base
                     $group = [];
                     foreach ($data['group_ids'] as $k => $v) {
                         $group[] = [
-                            'uid' => $user->user_id,
-                            'group_id' => $v
+                            'uid'      => $user->user_id,
+                            'group_id' => $v,
                         ];
                     }
                     $AuthGroupAccessModel = new AuthGroupAccessModel();
@@ -96,7 +96,7 @@ class User extends Base
         }
 
         $AuthGroupModel = new AuthGroupModel();
-        $groups = $AuthGroupModel->where('status', 1)->field('id,title')->select();
+        $groups         = $AuthGroupModel->where('status', 1)->field('id,title')->select();
         View::assign('groups', $groups);
 
         return View::fetch('addUser');
@@ -112,7 +112,7 @@ class User extends Base
 
             //验证
             $validate = validate('User');
-            $check = $validate->scene('edit')->check($data);
+            $check    = $validate->scene('edit')->check($data);
             if ($check !== true) {
                 return $this->error($validate->getError());
             }
@@ -124,8 +124,8 @@ class User extends Base
                 $group = [];
                 foreach ($data['group_ids'] as $k => $v) {
                     $group[] = [
-                        'uid' => $uid,
-                        'group_id' => $v
+                        'uid'      => $uid,
+                        'group_id' => $v,
                     ];
                 }
                 $AuthGroupAccessModel->insertAll($group);
@@ -133,7 +133,7 @@ class User extends Base
             Cache::tag('menu')->rm($uid); //删除用户菜单配置缓存
 
             $userModel = new UserModel();
-            $res = $userModel->editUser($data);
+            $res       = $userModel->editUser($data);
 
             if ($res !== false) {
                 return $this->success('成功修改', url('User/index'));
@@ -147,15 +147,15 @@ class User extends Base
             return $this->error('参数错误');
         }
 
-        $user = UserModel::get($uid);
+        $user = UserModel::find($uid);
         View::assign('user', $user);
 
         $AuthGroupAccessModel = new AuthGroupAccessModel();
-        $userGroups = $AuthGroupAccessModel->where('uid', $uid)->column('group_id');
+        $userGroups           = $AuthGroupAccessModel->where('uid', $uid)->column('group_id');
         View::assign('userGroups', $userGroups);
 
         $AuthGroupModel = new AuthGroupModel();
-        $groups = $AuthGroupModel->where('status', 1)->field('id,title')->select();
+        $groups         = $AuthGroupModel->where('status', 1)->field('id,title')->select();
         View::assign('groups', $groups);
 
         return View::fetch('editUser');
@@ -186,17 +186,17 @@ class User extends Base
         }
 
         $userModel = new UserModel;
-        $user = $userModel::get($uid);
+        $user      = UserModel::find($uid);
         View::assign('user', $user);
 
         //最新文章列表
         $ArticleModel = new ArticleModel();
-        $articleList = $ArticleModel->where('user_id', $uid)->order('id desc')->paginate(20, false, ['query' => input('param.')]);
+        $articleList  = $ArticleModel->where('user_id', $uid)->order('id desc')->paginate(20, false, ['query' => input('param.')]);
         View::assign('articleList', $articleList);
 
         //操作日志
         $ActionLogModel = new ActionLogModel();
-        $actionLogList = $ActionLogModel->where('user_id', $uid)->order('id desc')->limit(10)->select();
+        $actionLogList  = $ActionLogModel->where('user_id', $uid)->order('id desc')->limit(10)->select();
         View::assign('actionLogList', $actionLogList);
 
         return View::fetch('viewUser');
@@ -222,7 +222,7 @@ class User extends Base
             }
 
             $UserModel = new UserModel();
-            $res = $UserModel->modifyPassword($uid, $newPwd);
+            $res       = $UserModel->modifyPassword($uid, $newPwd);
             if ($res) {
                 return $this->success('成功修改密码');
             } else {
@@ -230,8 +230,8 @@ class User extends Base
             }
         }
 
-        $user = UserModel::get($uid);
-        if (!$user) {
+        $user = UserModel::findOrEmpty($uid);
+        if ($user->isEmpty()) {
             return $this->error('用户不存在');
         }
         View::assign('uid', $uid);
@@ -249,7 +249,7 @@ class User extends Base
         }
 
         $UserModel = new UserModel();
-        $res = $UserModel->where('user_id', $uid)->where('status', UserModel::STATUS_ACTIVED)->setField('status', UserModel::STATUS_FREEZED);
+        $res       = $UserModel->where('user_id', $uid)->where('status', UserModel::STATUS_ACTIVED)->setField('status', UserModel::STATUS_FREEZED);
         if ($res) {
             return $this->success('操作成功');
         } else {
@@ -265,7 +265,7 @@ class User extends Base
             return $this->error('参数uid错误');
         }
         $UserModel = new UserModel();
-        $res = $UserModel->where('user_id', $uid)->setField('status', UserModel::STATUS_ACTIVED);
+        $res       = $UserModel->where('user_id', $uid)->setField('status', UserModel::STATUS_ACTIVED);
         if ($res) {
             return $this->success('操作成功');
         } else {
@@ -277,17 +277,17 @@ class User extends Base
     public function newUsers()
     {
         $timeStart = input('param.timeStart', date('Y-m-d 0:0:0'));
-        $timeEnd = input('param.timeEnd', date('Y-m-d 23:59:59'));
+        $timeEnd   = input('param.timeEnd', date('Y-m-d 23:59:59'));
         if ($timeEnd <= $timeStart) {
             $timeEnd = date('Y-m-d 23:59:59', strtotime($timeStart));
         }
 
         $where = [
-            ['register_time', 'between', [$timeStart, $timeEnd]]
+            ['register_time', 'between', [$timeStart, $timeEnd]],
         ];
 
         $UserModel = new UserModel();
-        $list = $UserModel->whereTime($where)->order('user_id desc')->paginate(20, false, ['query' => input('param.')]);
+        $list      = $UserModel->whereTime($where)->order('user_id desc')->paginate(20, false, ['query' => input('param.')]);
         View::assign('list', $list);
         View::assign('pages', $list->render());
 
@@ -298,25 +298,25 @@ class User extends Base
     public function userStat()
     {
         $startTime = input('param.startTime');
-        $endTime = input('param.endTime');
+        $endTime   = input('param.endTime');
         if (!(isset($startTime) && isset($endTime))) {
-            $startTime  = date('Y-m-d', strtotime('-7 day'));
+            $startTime = date('Y-m-d', strtotime('-7 day'));
             $endTime   = date('Y-m-d');
         }
 
         $startDatetime = date('Y-m-d 00:00:00', strtotime($startTime));
-        $endDatetime = date('Y-m-d 23:59:59', strtotime($endTime));
+        $endDatetime   = date('Y-m-d 23:59:59', strtotime($endTime));
 
         $where = [
-            ['register_time', 'between', [$startDatetime, $endDatetime]]
+            ['register_time', 'between', [$startDatetime, $endDatetime]],
         ];
 
         $UserModel = new UserModel();
-        $count = $UserModel->where($where)->count();
-        $list = $UserModel->where($where)->order('user_id desc')->paginate(20, false, ['query' => input('param.')]);
+        $count     = $UserModel->where($where)->count();
+        $list      = $UserModel->where($where)->order('user_id desc')->paginate(20, false, ['query' => input('param.')]);
 
         $startTimestamp = strtotime($startTime);
-        $endTimestamp = strtotime($endTime);
+        $endTimestamp   = strtotime($endTime);
 
         View::assign('startTime', $startTime);
         View::assign('endTime', $endTime);
@@ -332,22 +332,22 @@ class User extends Base
     public function echartShow()
     {
         $option = [
-            'xAxis' => ['data' => []],
+            'xAxis'  => ['data' => []],
             'series' => [['data' => []]],
         ];
 
-        $where = [];
+        $where     = [];
         $timeStart = input('param.start');
-        $timeEnd = input('param.end');
+        $timeEnd   = input('param.end');
 
         $UserModel = new UserModel();
         for ($i = $timeStart; $i <= $timeEnd; $i += (24 * 3600)) {
-            $day = date('m-d', $i);
+            $day       = date('m-d', $i);
             $beginTime = mktime(0, 0, 0, date('m', $i), date('d', $i), date('Y', $i));
-            $endTime = mktime(23, 59, 59, date('m', $i), date('d', $i), date('Y', $i));
+            $endTime   = mktime(23, 59, 59, date('m', $i), date('d', $i), date('Y', $i));
 
             unset($where);
-            $where[] = ['register_time', 'between', [date_time($beginTime), date_time($endTime)]];
+            $where[]      = ['register_time', 'between', [date_time($beginTime), date_time($endTime)]];
             $inquiryCount = $UserModel->where($where)->count();
 
             array_push($option['xAxis']['data'], $day);
@@ -360,19 +360,19 @@ class User extends Base
     //给用户发送邮件
     public function sendMail()
     {
-        $data = input('post.');
+        $data  = input('post.');
         $check = $this->validate($data, ['uid' => 'require|gt:0', 'title' => 'require', 'content' => 'require']);
         if ($check !== true) {
             return $this->error($check);
         }
 
-        $uid = input('post.uid/d');
-        $title = input('post.title/s');
+        $uid     = input('post.uid/d');
+        $title   = input('post.title/s');
         $content = input('post.message/s');
 
         $UserModel = new UserModel();
-        $toUser = $UserModel->where('user_id', $uid)->value('email');
-        $res = send_mail($toUser, $title, $content);
+        $toUser    = $UserModel->where('user_id', $uid)->value('email');
+        $res       = send_mail($toUser, $title, $content);
         if ($res) {
             return $this->success('邮件已发送');
         } else {
@@ -388,13 +388,13 @@ class User extends Base
             return $this->error($check);
         }
 
-        $uid = input('post.uid/d');
-        $title = input('post.title/s');
+        $uid     = input('post.uid/d');
+        $title   = input('post.title/s');
         $content = input('post.content/s');
-        $extra = "";
+        $extra   = "";
 
         $pushLogic = new PushLogic();
-        $res = $pushLogic->pushToUser($uid, Message::TYPE_SYSTEM, $title, $content, $extra);
+        $res       = $pushLogic->pushToUser($uid, Message::TYPE_SYSTEM, $title, $content, $extra);
         if ($res) {
             return $this->success('消息已推送');
         } else {

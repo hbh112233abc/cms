@@ -11,11 +11,10 @@ namespace app\common\logic;
 
 use app\common\exception\ModelException;
 use app\common\library\ResultCode;
-use app\common\model\UserPushTokenModel;
-use think\exception\DbException;
-use think\Model;
-use app\common\model\UserTokenInfoModel;
 use app\common\model\UserModel;
+use app\common\model\UserPushTokenModel;
+use app\common\model\UserTokenInfoModel;
+use think\Model;
 
 class UserLogic
 {
@@ -23,7 +22,7 @@ class UserLogic
     public function register($mobile, $password, $nickname = '', $email = '', $account = '', $status = UserModel::STATUS_ACTIVED)
     {
         $UserModel = new UserModel();
-        $user = $UserModel->createUser($mobile, $password, $nickname, $email, $account, $status);
+        $user      = $UserModel->createUser($mobile, $password, $nickname, $email, $account, $status);
         if (!$user) {
             $this->error = $UserModel->error;
             return false;
@@ -42,7 +41,7 @@ class UserLogic
     public function login($account, $password, $ip = '127.0.0.1')
     {
         $UserModel = new UserModel();
-        $user = $UserModel->checkUser($account, $password);
+        $user      = $UserModel->checkUser($account, $password);
         if (!$user) {
             throw new ModelException(ResultCode::E_USER_NOT_EXIST, '帐号不正确');
         }
@@ -76,7 +75,7 @@ class UserLogic
     public function modifyPassword($userId, $oldPassword, $newPassword)
     {
         $UserModel = new UserModel();
-        $user = $UserModel->find($userId);
+        $user      = $UserModel->find($userId);
         if (!$user) {
             throw new ModelException(ResultCode::E_USER_NOT_EXIST, '用户不存在!');
         }
@@ -88,14 +87,11 @@ class UserLogic
 
         $newPassword = encrypt_password($newPassword, get_config('password_key'));
 
-        $data['user_id'] = $userId;
-        $data['password'] = $newPassword;
-        $result = $UserModel->isUpdate(true)->save($data);
+        $user['password'] = $newPassword;
+        $result           = $user->save();
         if ($result == false) {
             return false;
         }
-
-        $user = $UserModel->find($userId);
 
         return $user;
     }
@@ -112,7 +108,7 @@ class UserLogic
         }
 
         $UserPushTokenModel = new UserPushTokenModel();
-        $userPushToken = $UserPushTokenModel->createUserPushToken($userId, $accessId, $deviceId, $os, $pushToken);
+        $userPushToken      = $UserPushTokenModel->createUserPushToken($userId, $accessId, $deviceId, $os, $pushToken);
 
         return $userPushToken;
     }
@@ -120,7 +116,7 @@ class UserLogic
     public function findOrCreateToken($userId, $accessId, $deviceId)
     {
         $UserTokenInfoModel = new UserTokenInfoModel();
-        $userTokenInfo = $UserTokenInfoModel->findByUserId($userId, $accessId, $deviceId);
+        $userTokenInfo      = $UserTokenInfoModel->findByUserId($userId, $accessId, $deviceId);
         if (!$userTokenInfo) {
             $userTokenInfo = $UserTokenInfoModel->createUserTokenInfo($userId, $accessId, $deviceId);
         }
@@ -129,7 +125,7 @@ class UserLogic
             $userTokenInfo = $UserTokenInfoModel->updateUserTokenInfo($userId, $accessId, $deviceId);
         }
         if (strtotime($userTokenInfo['expire_time']) < time()) {
-            $where['user_id'] = $userId;
+            $where['user_id']   = $userId;
             $where['access_id'] = $accessId;
             $where['device_id'] = $deviceId;
             $UserTokenInfoModel->where($where)->setField('status', UserTokenInfoModel::STATUS_EXPIRED);
@@ -145,7 +141,7 @@ class UserLogic
         $userId = $user['user_id'];
 
         $UserPushTokenModel = new UserPushTokenModel();
-        $userPushToken = $UserPushTokenModel->findByUserId($userId, $accessId, $deviceId);
+        $userPushToken      = $UserPushTokenModel->findByUserId($userId, $accessId, $deviceId);
         if ($userPushToken) {
             if ($userPushToken['os'] == Os::Android) {
                 $user['android_push_token'] = $userPushToken['push_token'];
@@ -157,7 +153,7 @@ class UserLogic
 
         $userTokenInfo = $this->findOrCreateToken($userId, $accessId, $deviceId);
         if ($userTokenInfo) {
-            $user['token'] = $userTokenInfo['token'];
+            $user['token']       = $userTokenInfo['token'];
             $user['expire_time'] = $userTokenInfo['expire_time'];
         }
 
@@ -179,13 +175,11 @@ class UserLogic
     //        if (!$userInviteCode) {
     //            $this->error = '邀请码不存在!';
     //            return false;
-    //        }
+    //        }    //
     //
-    //        $data = [
-    //            'status' => UserInviteCode::STATUS_USED,
-    //            'invite_user_id' => $inviteUserId,
-    //        ];
-    //        $result = $userInviteCode->isUpdate(true)->save($data);
+    //        $userInviteCode['status'] = UserInviteCode::STATUS_USED;
+    //        $userInviteCode['invite_user_id'] = $inviteUserId;
+    //        $result = $userInviteCode->save();
     //        if ($result == false) {
     //            $this->error = '邀请码更新错误!';
     //            return false;

@@ -2,13 +2,13 @@
 
 namespace app\admin\controller;
 
-use app\common\model\CrawlerModel;
 use app\common\model\CategoryModel;
-use think\Queue;
+use app\common\model\CrawlerModel;
 use think\facade\View;
+use think\Queue;
 
 /**
- 采集控制器
+采集控制器
  */
 class Crawler extends Base
 {
@@ -16,7 +16,7 @@ class Crawler extends Base
     public function index()
     {
         $crawlerModel = new CrawlerModel();
-        $where = [
+        $where        = [
             ['status', '>', CrawlerModel::STATUS_DELETED],
         ];
         $list = $crawlerModel->where($where)->order('id desc')->paginate(10);
@@ -31,7 +31,7 @@ class Crawler extends Base
     public function create()
     {
         if (request()->isAjax()) {
-            $data = input('post.');
+            $data              = input('post.');
             $data['is_timing'] = isset($data['is_timing']) && $data['is_timing'] == 'on' ? true : false;
             $data['is_paging'] = isset($data['is_paging']) && $data['is_paging'] == 'on' ? true : false;
 
@@ -41,7 +41,7 @@ class Crawler extends Base
             }
 
             $CrawlerModel = new CrawlerModel();
-            $res = $CrawlerModel->save($data);
+            $res          = $CrawlerModel->save($data);
             if ($res === true) {
                 return $this->success('成功添加新规则', url('crawler/index'));
             } else {
@@ -51,7 +51,7 @@ class Crawler extends Base
 
         //分类列表
         $CategoryModel = new CategoryModel();
-        $cateList = $CategoryModel->getTreeData('tree', 'sort,id', 'title_cn');
+        $cateList      = $CategoryModel->getTreeData('tree', 'sort,id', 'title_cn');
 
         View::assign('categoryList', $cateList);
 
@@ -65,15 +65,15 @@ class Crawler extends Base
         if (empty($id)) {
             return $this->error('参数错误');
         }
-        $crawler = CrawlerModel::get($id);
-        if (!$crawler) {
+        $crawler = CrawlerModel::findOrEmpty($id);
+        if ($crawler->isEmpty()) {
             return $this->error('采集规则不存在！');
         }
 
         $CrawlerModel = new CrawlerModel();
 
         if (request()->isAjax()) {
-            $data = input('post.');
+            $data              = input('post.');
             $data['is_timing'] = isset($data['is_timing']) && $data['is_timing'] == 'on' ? true : false;
             $data['is_paging'] = isset($data['is_paging']) && $data['is_paging'] == 'on' ? true : false;
 
@@ -82,7 +82,7 @@ class Crawler extends Base
                 return $this->error(validate('Crawler')->getError());
             }
 
-            $res = $CrawlerModel->allowField(true)->isUpdate(true)->save($data);
+            $res = $CrawlerModel->allowField(true)->update($data);
             if ($res === true) {
                 return $this->success('规则修改成功！', url('Crawler/index'));
             } else {
@@ -90,11 +90,11 @@ class Crawler extends Base
             }
         }
 
-        $crawler = CrawlerModel::get($id);
+        $crawler = CrawlerModel::find($id);
         View::assign('crawler', $crawler);
 
         $CategoryModel = new CategoryModel();
-        $cateList = $CategoryModel->getTreeData('tree', 'sort,id', 'title_cn');
+        $cateList      = $CategoryModel->getTreeData('tree', 'sort,id', 'title_cn');
         View::assign('categoryList', $cateList);
 
         return View::fetch('create');
@@ -105,25 +105,25 @@ class Crawler extends Base
     {
         $categoryId = input('get.category_id/d');
 
-        $data = input('get.');
-        $url = $data['url'];
+        $data     = input('get.');
+        $url      = $data['url'];
         $encoding = $data['encoding'];
         $isTiming = isset($data['is_timing']) && $data['is_timing'] == 'on' ? true : false;
         $isPaging = isset($data['is_paging']) && $data['is_paging'] == 'on' ? true : false;
 
         $startPage = input('get.start_page/d');
-        $endPage = input('get.end_page/d');
+        $endPage   = input('get.end_page/d');
         $pagingUrl = input('get.paging_url/s');
 
-        $articleUrl = input('get.article_url/s');
-        $articleTitle = input('get.article_title/s');
+        $articleUrl         = input('get.article_url/s');
+        $articleTitle       = input('get.article_title/s');
         $articleDescription = input('get.article_description/s');
-        $articleKeywords = input('get.article_keywords/s');
-        $articleContent = input('get.article_content/s');
-        $articleAuthor = input('get.article_author/s');
-        $articleImage = input('get.article_image/s');
+        $articleKeywords    = input('get.article_keywords/s');
+        $articleContent     = input('get.article_content/s');
+        $articleAuthor      = input('get.article_author/s');
+        $articleImage       = input('get.article_image/s');
 
-        $data = input('get.');
+        $data              = input('get.');
         $data['is_timing'] = isset($data['is_timing']) && $data['is_timing'] == 'on' ? true : false;
         $data['is_paging'] = isset($data['is_paging']) && $data['is_paging'] == 'on' ? true : false;
 
@@ -134,14 +134,14 @@ class Crawler extends Base
 
         try {
             $endPage = $isPaging ? $startPage : $endPage; //测试抓取时，分页只抓取一页的urls
-            $urls = \app\admin\job\Crawler::crawlUrls($url, $articleUrl, $isPaging, $startPage, $endPage, $pagingUrl);
+            $urls    = \app\admin\job\Crawler::crawlUrls($url, $articleUrl, $isPaging, $startPage, $endPage, $pagingUrl);
             //dump($urls);
             if (empty($urls)) {
                 return $this->error('未采集到文章网址', 'javascript:void(0)');
             }
 
             $contentUrl = $urls[0];
-            $result = \app\admin\job\Crawler::crawlArticle($contentUrl, $encoding, $articleTitle, $articleDescription, $articleKeywords, $articleContent, $articleAuthor, $articleImage);
+            $result     = \app\admin\job\Crawler::crawlArticle($contentUrl, $encoding, $articleTitle, $articleDescription, $articleKeywords, $articleContent, $articleAuthor, $articleImage);
             //dump($result);
 
             View::assign('article', $result);
@@ -156,10 +156,10 @@ class Crawler extends Base
     //开始采集
     public function startCrawl()
     {
-        $id = input('id/d', 0);
-        $crawler = CrawlerModel::get($id);
-        if (!$crawler) {
-            return $this->error('采集规则不存在');
+        $id      = input('id/d', 0);
+        $crawler = CrawlerModel::findOrEmpty($id);
+        if ($crawler->isEmpty()) {
+            return $this->error('采集规则不存在！');
         }
 
         //更新采集状态
@@ -167,7 +167,7 @@ class Crawler extends Base
         $crawler->save();
 
         //指定任务的处理类，若指定至方法时，@methodName
-        $jobHandlerClass  = 'app\admin\job\Crawler@startCrawl';
+        $jobHandlerClass = 'app\admin\job\Crawler@startCrawl';
         //任务的业务数据 . 不能为 resource 类型，其他类型最终将转化为json形式的字符串; jobData 为对象时，存储其public属性的键值对
         $jobData = ['id' => $id, 'uid' => $this->uid, 'create_time' => date_time()];
         //任务归属的队列名称，如果为新队列，会自动创建
@@ -206,19 +206,19 @@ class Crawler extends Base
             return $this->error('参数错误');
         }
 
-        $crawler = CrawlerModel::get($cid);
-        if (empty($crawler)) {
-            return $this->error('采集规则不存在!');
+        $crawler = CrawlerModel::findOrEmpty($id);
+        if ($crawler->isEmpty()) {
+            return $this->error('采集规则不存在！');
         }
 
         $data = $crawler->toArray();
         unset($data['id']);
-        $data['title'] = $data['title'] . ' 副本';
+        $data['title']       = $data['title'] . ' 副本';
         $data['update_time'] = date_time();
         $data['create_time'] = date_time();
 
         $CrawlerModel = new CrawlerModel();
-        $res = $CrawlerModel->save($data);
+        $res          = $CrawlerModel->save($data);
         if ($res) {
             return $this->success('克隆规则成功!');
         } else {

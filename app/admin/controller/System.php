@@ -6,7 +6,6 @@ use app\common\model\ActionLogModel;
 use app\common\model\ConfigModel;
 use app\common\model\LinksModel;
 use think\Controller;
-use think\Db;
 use think\facade\Cache;
 use think\facade\Env;
 use think\facade\View;
@@ -28,8 +27,9 @@ class System extends Base
 
             $ConfigModel = new ConfigModel();
             foreach ($data as $k => $v) {
-                if (ConfigModel::get($k)) {
-                    $ConfigModel->where('name', $k)->setField('value', $v);
+                $config = ConfigModel::where('name', $k)->findOrEmpty();
+                if (!$config->isEmpty()) {
+                    $ConfigModel->where('name', $k)->update(['value' => $v]);
                 } else {
                     $ConfigModel->save(['name' => $k, 'value' => $v]);
                 }
@@ -40,8 +40,8 @@ class System extends Base
 
         //获取标签组
         $ConfigModel = new ConfigModel();
-        $tabMeta = $ConfigModel->where('name', 'tab_meta')->value('value');
-        $tabs = json_decode($tabMeta, true);
+        $tabMeta     = $ConfigModel->where('name', 'tab_meta')->value('value');
+        $tabs        = json_decode($tabMeta, true);
         View::assign('tabs', $tabs);
 
         $configs = $ConfigModel->where('tab', '=', $tab)->order('sort asc')->select();
@@ -54,7 +54,7 @@ class System extends Base
     public function contact()
     {
         if (request()->isAjax()) {
-            $data = input('post.');
+            $data        = input('post.');
             $ConfigModel = new ConfigModel();
             foreach ($data as $k => $v) {
                 $ConfigModel->where('name', $k)->setField('value', $v);
@@ -70,7 +70,7 @@ class System extends Base
     public function email()
     {
         if (request()->isAjax()) {
-            $data = input('post.');
+            $data        = input('post.');
             $ConfigModel = new ConfigModel();
             foreach ($data as $k => $v) {
                 $ConfigModel->where('name', $k)->setField('value', $v);
@@ -86,7 +86,7 @@ class System extends Base
     public function seo()
     {
         if (request()->isAjax()) {
-            $data = input('post.');
+            $data        = input('post.');
             $ConfigModel = new ConfigModel();
             foreach ($data as $k => $v) {
                 $ConfigModel->where('name', $k)->setField('value', $v);
@@ -102,7 +102,7 @@ class System extends Base
     public function clearCache()
     {
         if (request()->isPost()) {
-            $dir = new \youyi\util\Dir(Env::get('runtime_path'));
+            $dir   = new \youyi\util\Dir(Env::get('runtime_path'));
             $types = input('types');
             if (count($types)) {
                 foreach ($types as $k => $v) {
@@ -152,7 +152,7 @@ class System extends Base
     public function links()
     {
         $LinksModel = new LinksModel();
-        $list = $LinksModel->order('sort')->select();
+        $list       = $LinksModel->order('sort')->select();
         View::assign('list', $list);
         return view();
     }
@@ -160,9 +160,9 @@ class System extends Base
     //新增友链
     public function addLinks()
     {
-        $data = input('post.');
+        $data       = input('post.');
         $LinksModel = new LinksModel();
-        $res = $LinksModel->insert($data);
+        $res        = $LinksModel->insert($data);
         if ($res) {
             cache('links', null);
             return $this->success('添加成功');
@@ -188,7 +188,7 @@ class System extends Base
     //排序友链
     public function orderLinks()
     {
-        $data = input('post.');
+        $data       = input('post.');
         $LinksModel = new LinksModel();
         foreach ($data as $k => $v) {
             $LinksModel->where('id', $k)->setField('sort', $v);
@@ -200,9 +200,9 @@ class System extends Base
     //删除友链
     public function deleteLinks()
     {
-        $id = input('param.id/d', 0);
+        $id         = input('param.id/d', 0);
         $LinksModel = new LinksModel();
-        $res = $LinksModel->where('id', $id)->delete();
+        $res        = $LinksModel->where('id', $id)->delete();
         if ($res) {
             cache('links', null);
             return $this->success('删除成功');
@@ -216,18 +216,18 @@ class System extends Base
     {
         $ActionLogModel = new ActionLogModel();
 
-        $key = input('param.key');
+        $key    = input('param.key');
         $action = input('param.action', '');
 
         $startTime = input('param.startTime');
-        $endTime = input('param.endTime');
+        $endTime   = input('param.endTime');
         if (!(isset($startTime) && isset($endTime))) {
-            $startTime  = date('Y-m-d', strtotime('-31 day'));
+            $startTime = date('Y-m-d', strtotime('-31 day'));
             $endTime   = date('Y-m-d');
         }
 
         $startDatetime = date('Y-m-d 00:00:00', strtotime($startTime));
-        $endDatetime = date('Y-m-d 23:59:59', strtotime($endTime));
+        $endDatetime   = date('Y-m-d 23:59:59', strtotime($endTime));
 
         $where = [
             ['remark', 'like', "%{$key}%"],
@@ -245,16 +245,16 @@ class System extends Base
             ];
         }
 
-        $fields = 'id, user_id, action, module, ip, remark, data, create_time';
+        $fields     = 'id, user_id, action, module, ip, remark, data, create_time';
         $pageConfig = [
-            'type' => '\\app\\common\\paginator\\BootstrapTable',
-            'query' => input('param.')
+            'type'  => '\\app\\common\\paginator\\BootstrapTable',
+            'query' => input('param.'),
         ];
         $listRow = input('param.list_rows/d') ? input('param.list_rows/d') : 20;
 
-        $list = $ActionLogModel->where($where)->field($fields)->order('id desc')->paginate($listRow, false, $pageConfig);
+        $list           = $ActionLogModel->where($where)->field($fields)->order('id desc')->paginate($listRow, false, $pageConfig);
         $startTimestamp = strtotime($startTime);
-        $endTimestamp = strtotime($endTime);
+        $endTimestamp   = strtotime($endTime);
 
         View::assign('startTime', $startTime);
         View::assign('endTime', $endTime);
@@ -262,7 +262,6 @@ class System extends Base
         View::assign('endTimestamp', $endTimestamp);
         View::assign('list', $list);
         View::assign('pages', $list->render());
-
 
         return View::fetch('actionLogs');
     }

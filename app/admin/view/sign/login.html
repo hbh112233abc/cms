@@ -14,7 +14,7 @@
     <div class="form-group">
         <input type="text" class="form-control" name="code" autocomplete="off" placeholder="验证码" required="">
         <div><img id="code" src="{:url(app('http')->getName() . '/Sign/captcha')}" alt="captcha"
-                onclick="this.src='{:url(app('http')->getName() . \'/Sign/captcha\')}'+ '?' + new Date().getTime()"
+                onclick="this.src='{:url(app(\'http\')->getName() . \'/Sign/captcha\')}'+ '?' + new Date().getTime()"
                 style="cursor:pointer;margin-top:6px"></div>
     </div>
     <input type="hidden" name="redirect" value="{$Request.param.redirect}">

@@ -3,9 +3,8 @@
 namespace app\admin\controller;
 
 use app\common\model\AuthRuleModel;
-use think\facade\Cache;
-use think\helper\Time;
 use app\common\model\UserModel;
+use think\facade\Cache;
 use think\facade\View;
 
 /**
@@ -17,24 +16,28 @@ class Base extends \app\BaseController
 
     public function initialize()
     {
+        Cache::set('hbh', 111);
         //判断登陆session('uid')
         $uid = session('uid');
         if (!$uid) {
             if (request()->isAjax()) {
                 return $this->error('请重新登陆', url('index/Sign/index'));
             }
-            return $this->redirect('admin/Sign/index', 302, ['redirect' => urlencode($this->request->url(true))]);
+            \think\facade\Log::error('uid not found at session');
+            return $this->redirect('/admin/Sign/index', 302, ['redirect' => urlencode($this->request->url(true))]);
         }
         $this->uid = $uid;
 
         //实现用户单个端登录，方法: 通过判断cookie和服务器cache的login_hash值
         $localLoginHash = cookie($uid . '_login_hash');
-        $cacheLoginHash = cache($uid . '_login_hash');
+        $cacheLoginHash = Cache::get($uid . '_login_hash');
+
         if ($localLoginHash != $cacheLoginHash) {
             if (request()->isAjax()) {
                 return $this->error('请重新登陆', url('admin/Sign/index'));
             } else {
-                return $this->redirect('admin/Sign/index', ['redirect' => urlencode($this->request->url(true))]);
+                \think\facade\Log::error('login hash not same[' . $localLoginHash . ']<>[' . $cacheLoginHash . ']');
+                return $this->redirect('/admin/Sign/index', 302, ['redirect' => urlencode($this->request->url(true))]);
             }
         }
 
@@ -45,29 +48,24 @@ class Base extends \app\BaseController
 
         //权限验证
         if (config('cms.auth_on') == 'on') {
-            $node = request()->module() . '/' . request()->controller() . '/' . request()->action();
+            $node = app('http')->getName() . '/' . request()->controller() . '/' . request()->action();
 
-            $auth = \think\auth\Auth::instance();
+            $auth = new \liliuwei\think\Auth();
             if (!$auth->check($node, $uid)) {
                 return $this->error('没有访问权限', 'javascript:void(0);');
             }
         }
 
         //用户信息
-        $myself = UserModel::get($uid);
+        $myself = UserModel::find($uid);
         View::assign('myself', $myself);
-
-        //昨日新增用户
-        $UserModel = new UserModel();
-        $yesterdayNewUserCount = $UserModel->cache('yesterdayNewUserCount', time_left())->whereTime('register_time', 'between', Time::yesterday())->count();
-        View::assign('yesterdayNewUserCount', $yesterdayNewUserCount);
 
         //菜单数据,Cache::tag不支持redis
         if (Cache::has($uid . '_menu')) {
             $menus = Cache::get($uid . '_menu');
         } else {
             $AuthRuleModel = new AuthRuleModel();
-            $menus = $AuthRuleModel->getTreeDataBelongto('level', 'sort, id', 'name', 'id', 'pid', 'admin');
+            $menus         = $AuthRuleModel->getTreeDataBelongto('level', 'sort, id', 'name', 'id', 'pid', 'admin');
             Cache::set($uid . '_menu', $menus);
         }
 

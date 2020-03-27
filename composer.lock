@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "64525c2008b26243670b636b5b306823",
+    "content-hash": "d8c7ff870d439a63e5f32659176927c9",
     "packages": [
         {
             "name": "cattong/think-auth",
@@ -101,6 +101,110 @@
                 "thinkphp5"
             ],
             "time": "2019-11-19T02:01:55+00:00"
+        },
+        {
+            "name": "hmxingkong/hmutil",
+            "version": "v0.5.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hmxingkong/hmutil.git",
+                "reference": "085de7d999e12385557cadf3017954eb4409a92f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hmxingkong/hmutil/zipball/085de7d999e12385557cadf3017954eb4409a92f",
+                "reference": "085de7d999e12385557cadf3017954eb4409a92f",
+                "shasum": "",
+                "mirrors": [
+                    {
+                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
+                        "preferred": true
+                    }
+                ]
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-openssl": "*",
+                "ext-simplexml": "*",
+                "php": ">=5.6.0"
+            },
+            "require-dev": {
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-openssl": "*",
+                "ext-simplexml": "*",
+                "php": ">=5.6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "hmxingkong\\utils\\": "src/hmxingkong/utils/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "hmxingkong",
+                    "email": "hmxingkong@126.com"
+                }
+            ],
+            "description": "A PHP based toolkit",
+            "time": "2020-03-22T09:15:14+00:00"
+        },
+        {
+            "name": "hmxingkong/think-multi-app",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hmxingkong/think-multi-app.git",
+                "reference": "1d3db67ea45ec6b6824f21d8573a511a69440131"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hmxingkong/think-multi-app/zipball/1d3db67ea45ec6b6824f21d8573a511a69440131",
+                "reference": "1d3db67ea45ec6b6824f21d8573a511a69440131",
+                "shasum": "",
+                "mirrors": [
+                    {
+                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
+                        "preferred": true
+                    }
+                ]
+            },
+            "require": {
+                "hmxingkong/hmutil": "^0.5.1",
+                "php": ">=7.1.0",
+                "topthink/framework": "^6.0.0"
+            },
+            "type": "library",
+            "extra": {
+                "think": {
+                    "services": [
+                        "think\\app\\Service"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "think\\app\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "hmxingkong",
+                    "email": "hmxingkong@126.com"
+                }
+            ],
+            "description": "ThinkPHP 6.* 多应用功能支持",
+            "time": "2020-03-23T03:47:48+00:00"
         },
         {
             "name": "league/flysystem",
@@ -360,16 +464,16 @@
         },
         {
             "name": "nesbot/carbon",
-            "version": "2.32.0",
+            "version": "2.32.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/briannesbitt/Carbon.git",
-                "reference": "7410a349613bf32d02d8aaed1c669698ddd2b718"
+                "reference": "ecb525c766deb3bbbb6a0082ea0e41d3d9ae477c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/7410a349613bf32d02d8aaed1c669698ddd2b718",
-                "reference": "7410a349613bf32d02d8aaed1c669698ddd2b718",
+                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/ecb525c766deb3bbbb6a0082ea0e41d3d9ae477c",
+                "reference": "ecb525c766deb3bbbb6a0082ea0e41d3d9ae477c",
                 "shasum": "",
                 "mirrors": [
                     {
@@ -433,7 +537,7 @@
                 "datetime",
                 "time"
             ],
-            "time": "2020-03-24T16:01:47+00:00"
+            "time": "2020-03-26T13:04:10+00:00"
         },
         {
             "name": "opis/closure",
@@ -1297,56 +1401,6 @@
             ],
             "description": "The ThinkPHP5 Image Package",
             "time": "2016-09-29T06:05:43+00:00"
-        },
-        {
-            "name": "topthink/think-multi-app",
-            "version": "v1.0.12",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/top-think/think-multi-app.git",
-                "reference": "3c1914d2adc08c8753c7f67228885ca47fb9b3bf"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/top-think/think-multi-app/zipball/3c1914d2adc08c8753c7f67228885ca47fb9b3bf",
-                "reference": "3c1914d2adc08c8753c7f67228885ca47fb9b3bf",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
-            },
-            "require": {
-                "php": ">=7.1.0",
-                "topthink/framework": "^6.0.0"
-            },
-            "type": "library",
-            "extra": {
-                "think": {
-                    "services": [
-                        "think\\app\\Service"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "think\\app\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "liu21st",
-                    "email": "liu21st@gmail.com"
-                }
-            ],
-            "description": "thinkphp6 multi app support",
-            "time": "2020-03-01T13:29:35+00:00"
         },
         {
             "name": "topthink/think-orm",
