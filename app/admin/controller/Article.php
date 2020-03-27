@@ -438,11 +438,10 @@ class Article extends Base
         View::assign('list', $list);
         View::assign('pages', $list->render());
 
-        $MessageModel      = new MessageModel();
         $data['status']    = MessageModel::STATUS_READ;
         $data['read_time'] = date_time();
         $data['is_readed'] = 1; //0未读，1已读
-        $MessageModel->save($data, ['type' => MessageModel::TYPE_COMMENT]);
+        MessageModel::where('type', MessageModel::TYPE_COMMENT)->update($data);
 
         return View::fetch('commentList');
     }
