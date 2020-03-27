@@ -31,7 +31,8 @@
         "topthink/think-queue": "^3.0",
         "cattong/think-auth": "^1.0",
         "cattong/think-mailer": "^1.0",
-        "liliuwei/thinkphp-jump": "^1.4"
+        "liliuwei/thinkphp-jump": "^1.4",
+        "liliuwei/thinkphp-auth": "2.0.*"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.2",

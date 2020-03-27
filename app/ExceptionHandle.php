@@ -52,18 +52,6 @@ class ExceptionHandle extends Handle
     public function render($request, Throwable $e): Response
     {
         // 添加自定义异常处理机制
-        $data = [
-            'file'    => $e->getFile(),
-            'line'    => $e->getLine(),
-            'message' => $this->getMessage($e),
-            'code'    => $this->getCode($e),
-        ];
-        $detailError = "[{$data['file']}:{$data['line']}] \n   [code: {$data['code']}] : \n {$data['message']}";
-
-        Log::error('##### ExceptionHandle #### exception class: ' . get_class($e));
-        Log::error('print: [file][line] [error code]: message');
-        Log::error($detailError);
-
 
         // 其他错误交给系统处理
         return parent::render($request, $e);

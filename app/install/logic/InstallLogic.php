@@ -6,7 +6,6 @@ use think\facade\Config;
 use think\facade\Db;
 use think\facade\Log;
 
-
 /**
  * 安装逻辑
  */
@@ -43,7 +42,6 @@ class InstallLogic
         return true;
     }
 
-
     /**
      * 检查数据库安装数据
      * @author cattong
@@ -53,7 +51,7 @@ class InstallLogic
     public function checkDbConfig($db = null)
     {
         // 检测数据库配置
-        if (!is_array($db) || empty($db['hostname']) ||  empty($db['hostport']) || empty($db['database']) || empty($db['username'])) {
+        if (!is_array($db) || empty($db['hostname']) || empty($db['hostport']) || empty($db['database']) || empty($db['username'])) {
             $this->error = '请填写完整的数据库配置';
             return false;
         }
@@ -80,12 +78,12 @@ class InstallLogic
     {
         $installed = false;
         try {
-            $dbConnect = self::connect($db, 'ins');
+            $dbConnect  = self::connect($db, 'ins');
             $checkTable = $db['prefix'] . 'user';
-            $exist = $dbConnect->query("show tables like '$checkTable'");
+            $exist      = $dbConnect->query("show tables like '$checkTable'");
             if ($exist) {
                 $this->error = '数据库已经安装过，请确认数据库已经清空表';
-                $installed = true;
+                $installed   = true;
             }
         } catch (\Exception $e) {
             $this->error = '安装出现问题：' . $e->getMessage();
@@ -105,9 +103,9 @@ class InstallLogic
 
         $success = false;
 
-        $site = session('site');
+        $site  = session('site');
         $admin = session('admin');
-        $db = session('db');
+        $db    = session('db');
         try {
             //创建数据库
 
@@ -118,7 +116,7 @@ class InstallLogic
 
             $sql = "CREATE DATABASE IF NOT EXISTS `{$dbname}` DEFAULT CHARACTER SET utf8";
             if (!$dbConnect->execute($sql)) {
-                return [ 'code' => ResultCode::ACTION_FAILED, 'msg' => '创建数据库失败'];
+            return [ 'code' => ResultCode::ACTION_FAILED, 'msg' => '创建数据库失败'];
             }
 
             //创建数据表
@@ -164,17 +162,17 @@ class InstallLogic
      * @param [array] $config 数据库连接配置
      * @return think\facade\Db
      */
-    static public function connect($config, $key = '')
+    public static function connect($config, $key = '')
     {
         $config['params'] = [
-            \PDO::ATTR_CASE              => \PDO::CASE_LOWER,
-            \PDO::ATTR_EMULATE_PREPARES  => true,
+            \PDO::ATTR_CASE             => \PDO::CASE_LOWER,
+            \PDO::ATTR_EMULATE_PREPARES => true,
         ];
-        $databaseConfig = Config::get('database');
-        $connections = $databaseConfig['connections'];
-        $default = $connections[$config['type']];
-        $key = $key ?: md5(json_encode($config));
-        $connections[$key] = array_merge($default, $config);
+        $databaseConfig                = Config::get('database');
+        $connections                   = $databaseConfig['connections'];
+        $default                       = $connections[$config['type']];
+        $key                           = $key ?: md5(json_encode($config));
+        $connections[$key]             = array_merge($default, $config);
         $databaseConfig['connections'] = $connections;
         Config::set($databaseConfig, 'database');
         return Db::connect($key);

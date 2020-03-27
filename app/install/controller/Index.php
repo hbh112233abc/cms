@@ -2,9 +2,8 @@
 
 namespace app\install\controller;
 
-use think\facade\Env;
-use think\facade\View;
 use app\install\logic\InstallLogic;
+use think\facade\View;
 
 /**
  * 安装控制器
@@ -48,7 +47,6 @@ class Index extends \app\BaseController
         return View::fetch('index');
     }
 
-
     /**
      * 站点数据写入
      *
@@ -64,7 +62,7 @@ class Index extends \app\BaseController
 
         if ($this->request->isPost()) {
             $installLogic = new InstallLogic();
-            $check = $installLogic->checkSiteConfig($site, $admin);
+            $check        = $installLogic->checkSiteConfig($site, $admin);
             if ($check !== true) {
                 return $this->error($installLogic->getError());
             }
