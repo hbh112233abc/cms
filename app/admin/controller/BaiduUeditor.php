@@ -4,12 +4,11 @@
  */
 namespace app\admin\controller;
 
-use think\facade\Env;
+use think\facade\Filesystem;
 use think\Image;
 
 class BaiduUeditor extends Base
 {
-
     private $thumb; //缩略图模式：1、标识缩略图等比例缩放类型，2、标识缩略图缩放后填充类型
     private $water; //是否加水印(0:无水印,1:水印文字,2:水印图片)
     private $waterText; //水印文字
@@ -21,8 +20,8 @@ class BaiduUeditor extends Base
     public function initialize()
     {
         parent::initialize();
-
-        $this->uid = ""; //置为"", 避免增加一个目录级;
+        $fsConfig  = Filesystem::getDiskConfig(Filesystem::getDefaultDriver());
+        $this->uid = session('uid') ? strval(session('uid')) : '';
 
         $this->thumb     = 1;
         $this->water     = intval(get_config('article_water', '0'));
@@ -31,8 +30,8 @@ class BaiduUeditor extends Base
             $this->waterText = get_config('domain_name');
         }
 
-        $this->rootPath = Env::get('root_path') . 'public';
-        $this->savePath = DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . $this->uid;
+        $this->rootPath = $fsConfig['root'];
+        $this->urlPath  = $fsConfig['url'];
 
         // 水印位置, 9为右下角
         $this->waterPosition = 9;
@@ -184,19 +183,16 @@ class BaiduUeditor extends Base
      */
     private function upFile($config, $fieldName)
     {
-
         $validate = [
             'size' => $config['maxSize'],
             'ext'  => $this->format_exts($config['allowFiles']),
         ];
 
-        $dirname = $this->rootPath . $this->savePath;
-        $file    = request()->file('upfile');
+        $file = request()->file('upfile');
 
-        $saveName = \think\facade\Filesystem::putFile($this->uid, $file);
-        $savePath = $this->savePath;
+        $saveName = Filesystem::putFile($this->uid, $file);
         if ($saveName) {
-            $fname    = $dirname . DIRECTORY_SEPARATOR . $saveName;
+            $fname    = $this->rootPath . DIRECTORY_SEPARATOR . $saveName;
             $imagearr = explode(',', 'jpg,gif,png,jpeg,bmp,ttf,tif');
             $ext      = $file->getExtension();
             $quality  = get_config('image_upload_quality', 80); //获取图片清晰度设置，默认是80
@@ -210,7 +206,7 @@ class BaiduUeditor extends Base
                     $image->thumb($maxLimit, $maxLimit, $this->thumb); //设置缩略图模式，按宽最大680或高最大680压缩
                 }
                 if ($this->water == 1) {
-                    $font = Env::get('VENDOR_PATH') . '/topthink/think-captcha/assets/zhttfs/1.ttf';
+                    $font = public_path('vendor') . '/topthink/think-captcha/assets/zhttfs/1.ttf';
                     $image->text($this->waterText, $font, 10, '#FFCC66', $this->waterPosition, [-8, -8])->save($fname, $ext, $quality);
                 } else if ($this->water == 2) {
                     $image->water($this->waterImage)->save($fname, $ext, $quality);
@@ -221,7 +217,7 @@ class BaiduUeditor extends Base
 
             $data = array(
                 'state'    => 'SUCCESS',
-                'url'      => config('view_replace_str.__PUBLIC__') . str_replace(DIRECTORY_SEPARATOR, '/', $savePath . $saveName),
+                'url'      => $this->urlPath . DIRECTORY_SEPARATOR . $saveName,
                 'title'    => $file->getFileName(),
                 'original' => $file->getFileName(),
                 'type'     => '.' . $ext,
@@ -229,7 +225,7 @@ class BaiduUeditor extends Base
             );
         } else {
             $data = array(
-                'state' => $file->getError(),
+                'state' => '文件上传失败',
             );
         }
         return json($data);
@@ -244,8 +240,8 @@ class BaiduUeditor extends Base
         $base64Data = $_POST[$fieldName];
         $img        = base64_decode($base64Data);
 
-        $savePath         = $this->savePath . date('Ymd') . DIRECTORY_SEPARATOR;
-        $dirname          = $this->rootPath . $savePath;
+        $savePath         = DIRECTORY_SEPARATOR . $this->uid . DIRECTORY_SEPARATOR . date('Ymd') . DIRECTORY_SEPARATOR;
+        $dirname          = $this->rootPath . DIRECTORY_SEPARATOR . $savePath;
         $file['filesize'] = strlen($img);
         $file['oriName']  = $config['oriName'];
         $file['ext']      = strtolower(strrchr($config['oriName'], '.'));
@@ -284,7 +280,7 @@ class BaiduUeditor extends Base
             //移动成功
             $data = array(
                 'state'    => 'SUCCESS',
-                'url'      => config('view_replace_str.__PUBLIC__') . str_replace(DIRECTORY_SEPARATOR, '/', $savePath . $file['name']),
+                'url'      => str_replace(DIRECTORY_SEPARATOR, '/', $this->urlPath . $savePath . $file['name']),
                 'title'    => $file['name'],
                 'original' => $file['oriName'],
                 'type'     => $file['ext'],
@@ -404,7 +400,7 @@ class BaiduUeditor extends Base
             //移动成功
             $data = array(
                 'state'    => 'SUCCESS',
-                'url'      => config('view_replace_str.__PUBLIC__') . str_replace(DIRECTORY_SEPARATOR, '/', $savePath . $file['name']),
+                'url'      => str_replace(DIRECTORY_SEPARATOR, '/', $savePath . $file['name']),
                 'title'    => $file['name'],
                 'original' => $file['oriName'],
                 'type'     => $file['ext'],
@@ -420,7 +416,7 @@ class BaiduUeditor extends Base
      */
     private function file_list($allowFiles, $listSize, $get)
     {
-        $dirname = $this->rootPath . $this->savePath;
+        $dirname = $this->rootPath;
         if ($this->uid != 'admin') {
             $dirname .= $this->uid . '/';
         }
@@ -490,7 +486,7 @@ class BaiduUeditor extends Base
                 } else {
                     if (preg_match("/\.(" . $allowFiles . ")$/i", $file)) {
                         $files[] = array(
-                            'url'   => preg_replace('/(.*)upload/i', config('view_replace_str.__PUBLIC__') . '/upload', $path2),
+                            'url'   => preg_replace('/(.*)upload/i', '/upload', $path2),
                             'mtime' => filemtime($path2),
                         );
                     }
