@@ -22,6 +22,45 @@ if (\think\facade\Config::get('cache.type') == 'Redis') {
     define('CACHE_SEPARATOR', '_');
 }
 
+/**
+ * 缓存文件清理
+ * @param  string $path 目录名称或文件路径
+ * @return bool       清理结果
+ */
+function runtime_clear(string $path = '')
+{
+    $runtimePath = public_path('runtime');
+    $dir         = new \youyi\util\Dir($runtimePath);
+    if (empty($path)) {
+        return $dir->delDir($runtimePath);
+    }
+    if (strpos('/', $path) !== false) {
+        $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
+    }
+    if (strpos('\\', $path) !== false) {
+        $path = str_replace('\\', DIRECTORY_SEPARATOR, $path);
+    }
+
+    if (is_file($path) && strpos($runtimePath, $path) == 0) {
+        return unlink($path);
+    }
+    if (is_dir($path) && strpos($runtimePath, $path) == 0) {
+        return $dir->delDir($path);
+    }
+    if (strpos(DIRECTORY_SEPARATOR, $path) == 0) {
+        $path = substr($path, strlen(DIRECTORY_SEPARATOR));
+    }
+    is_dir($runtimePath . $path) && $dir->delDir($runtimePath . $path);
+    foreach ($dir->getList($runtimePath) as $subPath) {
+        if (in_array($subPath, ['.', '..'])) {
+            continue;
+        }
+        $temp = $runtimePath . $subPath . DIRECTORY_SEPARATOR . $path;
+        is_dir($temp) && $dir->delDir($temp);
+    }
+    return true;
+}
+
 function ip()
 {
     //strcasecmp 比较两个字符，不区分大小写。返回0，>0，<0。
