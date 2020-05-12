@@ -40,17 +40,18 @@ function runtime_clear(string $path = '')
     if (strpos('\\', $path) !== false) {
         $path = str_replace('\\', DIRECTORY_SEPARATOR, $path);
     }
-
     if (is_file($path) && strpos($runtimePath, $path) == 0) {
         return unlink($path);
     }
     if (is_dir($path) && strpos($runtimePath, $path) == 0) {
         return $dir->delDir($path);
     }
-    if (strpos(DIRECTORY_SEPARATOR, $path) == 0) {
+    if (strpos(DIRECTORY_SEPARATOR, $path) === 0) {
         $path = substr($path, strlen(DIRECTORY_SEPARATOR));
     }
+
     is_dir($runtimePath . $path) && $dir->delDir($runtimePath . $path);
+
     foreach ($dir->getList($runtimePath) as $subPath) {
         if (in_array($subPath, ['.', '..'])) {
             continue;
