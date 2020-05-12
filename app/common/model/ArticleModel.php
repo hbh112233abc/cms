@@ -266,10 +266,10 @@ class ArticleModel extends BaseModel
             $cate = CategoryModel::getParent1($cateId);
             foreach ($cate['ids'] as $k => $v) {
                 if (Cache::has('login_article_cate_' . $v)) {
-                    Cache::rm('login_article_cate_' . $v);
+                    Cache::delete('login_article_cate_' . $v);
                 }
                 if (Cache::has('logout_article_cate_' . $v)) {
-                    Cache::rm('logout_article_cate_' . $v);
+                    Cache::delete('logout_article_cate_' . $v);
                 }
             }
         }
