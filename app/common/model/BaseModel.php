@@ -15,8 +15,7 @@ class BaseModel extends Model
     //5、表关联：xxx()|xxxs() { return $this->hasOne, belongsTo,hasMany,belongsToMany;}
     //6、模型相关的操作方法及业务逻辑，如无要，尽量不要写在模型类中
 
-
-    const MODE_SINGLE_VALUE = 1; //单值模式
+    const MODE_SINGLE_VALUE   = 1; //单值模式
     const MODE_MULTIPLE_VALUE = 2; //多值模式
 
     //字段自动完成或默认处理：create_time
@@ -73,7 +72,7 @@ class BaseModel extends Model
             $exts[$key] = $value;
         }
 
-        $pk = $this->getPk();
+        $pk    = $this->getPk();
         $pkVal = $this->$pk;
         $this->where($pk, $pkVal)->setField('ext', json_encode($exts));
     }
@@ -84,7 +83,7 @@ class BaseModel extends Model
         $pk = $this->pk;
 
         //dump(substr(get_class($this), 0, -5));
-        $model = substr(get_class($this), 0, -5)  . 'MetaModel';
+        $model     = substr(get_class($this), 0, -5) . 'MetaModel';
         $MetaModel = new $model;
         if ($metaValue === '') {
             return $MetaModel->_meta($this->$pk, $metaKey);
@@ -98,7 +97,7 @@ class BaseModel extends Model
     {
         $pk = $this->pk;
 
-        $model = substr(get_class($this), 0, -5)  . 'MetaModel';
+        $model     = substr(get_class($this), 0, -5) . 'MetaModel';
         $MetaModel = new $model;
 
         return $MetaModel->_metas($this->$pk, $metaKey);
@@ -115,7 +114,8 @@ class BaseModel extends Model
         foreach ($data as $k => $v) {
             $data[$k] = trim($v);
         }
-        $id = $this->allowField(true)->insertGetId($data);
+        $model = self::create($data);
+        $id    = $model[$this->$pk];
         return $id;
     }
 
@@ -187,7 +187,7 @@ class BaseModel extends Model
         }
         $data = $data->toArray();
         // 获取树形或者结构数据
-        include_once(root_path() . 'extend/' . 'tree/Data.class.php');
+        include_once root_path() . 'extend/' . 'tree/Data.class.php';
         $tree = new \tree\Data();
         if ($type == 'tree') {
             $data = $tree::tree($data, $name, $fieldPK, $fieldPid);
