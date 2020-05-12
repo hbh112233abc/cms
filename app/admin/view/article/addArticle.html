@@ -123,7 +123,8 @@
                 <div class="form-group">
                     <label class="col-lg-2 control-label">内容<span class="text text-danger">*</span></label>
                     <div class="col-lg-10">
-                        <script id="container" name="content" type="text/plain">{$article ? html_entity_decode($article['content']) : ''}</script>
+                        <!-- <script id="container" name="content" type="text/plain">{$article ? html_entity_decode($article['content']) : ''}</script> -->
+                        {:ue_view("content",$article['content']??'')}
                     </div>
                 </div>
 
@@ -156,7 +157,7 @@
 <script src="__PUBLIC__/static/common/js/plugins/jquery.tagsinput.min.js"></script>
 
 <!-- 引入ueditor的js代码 -->
-<script src="__PUBLIC__/static/ueditor/ueditor.config.js?2017032702"></script>
+<!-- <script src="__PUBLIC__/static/ueditor/ueditor.config.js?2017032702"></script>
 <script src="__PUBLIC__/static/ueditor/ueditor.all.js?2017041701"></script>
 <script>
     //ueditor代码
@@ -168,7 +169,10 @@
       autoHeightEnabled : true,
       maximumWords : 200000,
     });
+</script> -->
 
+
+<script>
     var config = {
         '.chosen-select'           : {},
         '.chosen-select-deselect'  : {allow_single_deselect:true},

@@ -50,6 +50,12 @@ class System extends Base
         return View::fetch('index');
     }
 
+    //ueditor设置
+    public function ueditor()
+    {
+        return view();
+    }
+
     //联系信息
     public function contact()
     {
