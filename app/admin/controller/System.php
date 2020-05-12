@@ -7,7 +7,6 @@ use app\common\model\ConfigModel;
 use app\common\model\LinksModel;
 use think\Controller;
 use think\facade\Cache;
-use think\facade\Env;
 use think\facade\View;
 
 /**
@@ -108,30 +107,26 @@ class System extends Base
     public function clearCache()
     {
         if (request()->isPost()) {
-            $dir   = new \youyi\util\Dir(Env::get('runtime_path'));
-            $types = input('types');
+            $runtimePath = public_path('runtime');
+            $dir         = new \youyi\util\Dir($runtimePath);
+            $types       = input('types');
             if (count($types)) {
                 foreach ($types as $k => $v) {
                     switch ($v) {
                         case 'temp':
-                            is_dir(Env::get('runtime_path') . 'temp') && $dir->delDir(Env::get('runtime_path') . 'temp');
+                            runtime_clear('temp');
                             break;
                         case 'data':
-                            if (config('cache.type') == 'File') {
-                                is_dir(Env::get('runtime_path') . 'cache') && $dir->delDir(Env::get('runtime_path') . 'cache');
-                            } elseif (config('cache.type') == 'Redis') {
-                                Cache::clear();
-                            }
-
+                            runtime_clear('cache');
+                            Cache::clear();
                             break;
                         case 'log':
-                            is_dir(Env::get('runtime_path') . 'log') && $dir->delDir(Env::get('runtime_path') . 'log');
+                            runtime_clear('log');
                             break;
                         case 'vars':
                             //删除自定义的缓存，已经的缓存变量
-                            //is_dir(Env::get('runtime_path') . 'cache') && $dir->delDir(Env::get('runtime_path') . 'cache');
-                            Cache::rm('menu' . session('uid'));
-                            Cache::rm('config');
+                            Cache::delete('menu' . session('uid'));
+                            Cache::delete('config');
                             break;
                         default:
                             break;
