@@ -115,7 +115,7 @@ class BaseModel extends Model
             $data[$k] = trim($v);
         }
         $model = self::create($data);
-        $id    = $model[$this->$pk];
+        $id    = $model[$this->pk];
         return $id;
     }
 
