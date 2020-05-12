@@ -16,7 +16,6 @@ class Base extends \app\BaseController
 
     public function initialize()
     {
-        Cache::set('hbh', 111);
         //判断登陆session('uid')
         $uid = session('uid');
         if (!$uid) {
