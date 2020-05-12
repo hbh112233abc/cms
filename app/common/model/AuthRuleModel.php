@@ -2,6 +2,8 @@
 
 namespace app\common\model;
 
+use think\facade\Cache;
+
 /**
  * 权限规则model
  */
