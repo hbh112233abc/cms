@@ -4,3 +4,4 @@
 /runtime
 *.log
 .env
+/app/index/controller/Test.php
