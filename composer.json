@@ -34,7 +34,7 @@
         "liliuwei/thinkphp-auth": "2.0.*",
         "hmxingkong/think-multi-app": "^1.1",
         "nesbot/carbon": "^2.32",
-        "bingher/ueditor": "^1.0"
+        "bingher/ueditor": "dev-master"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.2",
