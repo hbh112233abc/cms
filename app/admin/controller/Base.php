@@ -60,14 +60,15 @@ class Base extends \app\BaseController
         View::assign('myself', $myself);
 
         //菜单数据,Cache::tag不支持redis
-        if (Cache::has($uid . '_menu')) {
-            $menus = Cache::get($uid . '_menu');
+        $menuCacheKey = 'menu_' . $uid;
+        if (Cache::has($menuCacheKey)) {
+            $menus = Cache::get($menuCacheKey);
         } else {
             $AuthRuleModel = new AuthRuleModel();
             $menus         = $AuthRuleModel->getTreeDataBelongto('level', 'sort, id', 'name', 'id', 'pid', 'admin');
-            Cache::set($uid . '_menu', $menus);
+            Cache::set($menuCacheKey, $menus);
         }
-
+        // halt($menus);
         View::assign('menus', $menus);
     }
 }

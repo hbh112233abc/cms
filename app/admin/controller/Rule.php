@@ -201,18 +201,13 @@ class Rule extends Base
     public function ruleGroup()
     {
         if (request()->isPost()) {
-            $data = input('post.');
-            $map  = [
-                'id' => $data['id'],
-            ];
-            $data['rules']  = implode(',', $data['rule_ids']);
-            $AuthGroupModel = new AuthGroupModel();
-            $result         = $AuthGroupModel->allowField(true)->update($data);
+            $groupId = input('post.id/d', 0);
+            $rules   = implode(',', input('post.rule_ids/a', []));
+            $result  = AuthGroupModel::where('id', $groupId)->update(['rules' => $rules]);
             if ($result !== false) {
-                $AuthGroupAccessModel = new AuthGroupAccessModel();
-                $groupUserIds         = $AuthGroupAccessModel->where('group_id', $data['id'])->column('uid');
+                $groupUserIds = AuthGroupAccessModel::where('group_id', $groupId)->column('uid');
                 foreach ($groupUserIds as $uid) {
-                    Cache::tag('menu')->rm($uid);
+                    Cache::delete('menu_' . $uid);
                 }
                 return $this->success('操作成功', url('Rule/group'));
             } else {
@@ -222,14 +217,13 @@ class Rule extends Base
 
         $id = input('param.id');
         // 获取用户组数据
-        $AuthGroupModel     = new AuthGroupModel();
-        $groupData          = $AuthGroupModel->where('id', $id)->find();
+        $groupData          = AuthGroupModel::where('id', $id)->find();
         $groupData['rules'] = explode(',', $groupData['rules']);
         // 获取规则数据
         $AuthRuleModel = new AuthRuleModel();
         $ruleData      = $AuthRuleModel->getTreeData('level', 'id', 'title');
         // 分组信息
-        $groups = $AuthGroupModel->field('id, title')->select();
+        $groups = AuthGroupModel::field('id, title')->select();
         $assign = [
             'group_data' => $groupData,
             'rule_data'  => $ruleData,

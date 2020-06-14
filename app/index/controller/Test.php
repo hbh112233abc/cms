@@ -31,4 +31,10 @@ class Test extends Base
 
         return view('testTags');
     }
+
+    //http://www.cms.com/index/test/index
+    public function index()
+    {
+        return view();
+    }
 }

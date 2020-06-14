@@ -125,7 +125,7 @@ class System extends Base
                             break;
                         case 'vars':
                             //删除自定义的缓存，已经的缓存变量
-                            Cache::delete('menu' . session('uid'));
+                            Cache::delete('menu_' . session('uid'));
                             Cache::delete('config');
                             break;
                         default:
